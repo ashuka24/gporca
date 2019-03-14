@@ -88,14 +88,7 @@ namespace gpopt
 			{
 				return "CXformInnerJoin2PartialDynamicIndexGetApply";
 			}
-
-			// return true if xform should be applied only once
-			virtual
-			BOOL IsApplyOnce()
-			{
-				return true;
-			}
-	};
+	}; // class CXformInnerJoin2PartialDynamicIndexGetApply
 }
 
 #endif // !GPOPT_CXformInnerJoin2PartialDynamicIndexGetApply_H
