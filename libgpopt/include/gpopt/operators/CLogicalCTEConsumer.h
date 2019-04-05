@@ -100,6 +100,8 @@ namespace gpopt
 				return m_pexprInlined;
 			}
 
+			void ReplaceInlinedExpr (CMemoryPool *mp);
+
 			// operator specific hash function
 			virtual
 			ULONG HashValue() const;

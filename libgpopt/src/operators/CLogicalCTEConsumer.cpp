@@ -114,6 +114,25 @@ CLogicalCTEConsumer::CreateInlinedExpr
 	m_pexprInlined = pexprCTEDef->PexprCopyWithRemappedColumns(mp, m_phmulcr, true /*must_exist*/);
 }
 
+void
+CLogicalCTEConsumer::ReplaceInlinedExpr
+	(
+	CMemoryPool *mp
+	)
+{
+	CExpression *pexprProducer = COptCtxt::PoctxtFromTLS()->Pcteinfo()->PexprCTEProducer(m_id);
+	GPOS_ASSERT(NULL != pexprProducer);
+	// the actual definition of the CTE is the first child of the producer
+	CExpression *pexprCTEDef = (*pexprProducer)[0];
+
+	CLogicalCTEProducer *popProducer = CLogicalCTEProducer::PopConvert(pexprProducer->Pop());
+
+	m_phmulcr->Release();
+	m_phmulcr = CUtils::PhmulcrMapping(mp, popProducer->Pdrgpcr(), m_pdrgpcr);
+	m_pexprInlined->Release();
+	m_pexprInlined = pexprCTEDef->PexprCopyWithRemappedColumns(mp, m_phmulcr, true /*must_exist*/);
+}
+
 //---------------------------------------------------------------------------
 //	@function:
 //		CLogicalCTEConsumer::PcrsDeriveOutput

@@ -107,6 +107,7 @@ CXformInlineCTEConsumerUnderSelect::Transform
 
 	// inline consumer
 	GPOS_ASSERT(NULL != popConsumer->Phmulcr());
+	popConsumer->ReplaceInlinedExpr(mp);
 	CExpression *pexprInlinedConsumer = popConsumer->PexprInlined();
 	pexprInlinedConsumer->AddRef();
 	pexprScalar->AddRef();

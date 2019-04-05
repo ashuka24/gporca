@@ -96,6 +96,7 @@ CXformInlineCTEConsumer::Transform
 
 	// inline the consumer
 	CLogicalCTEConsumer *popConsumer = CLogicalCTEConsumer::PopConvert(pexpr->Pop());
+	popConsumer->ReplaceInlinedExpr(pxfctxt->Pmp());
 	CExpression *pexprAlt = popConsumer->PexprInlined();
 	pexprAlt->AddRef();
 	// add alternative to xform result
