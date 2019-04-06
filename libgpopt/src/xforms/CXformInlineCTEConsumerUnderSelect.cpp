@@ -15,6 +15,7 @@
 
 #include "gpopt/operators/ops.h"
 #include "gpopt/operators/CNormalizer.h"
+#include "gpopt/operators/CExpressionUtils.h"
 
 using namespace gpopt;
 
@@ -113,12 +114,13 @@ CXformInlineCTEConsumerUnderSelect::Transform
 	pexprScalar->AddRef();
 
 	CExpression *pexprSelect = CUtils::PexprLogicalSelect(mp, pexprInlinedConsumer, pexprScalar);
-
 	CExpression *pexprNormalized = CNormalizer::PexprNormalize(mp, pexprSelect);
+	CExpression *pexprDeduped = CExpressionUtils::PexprDedupChildren(mp, pexprNormalized);
 	pexprSelect->Release();
+	pexprNormalized->Release();
 
 	// add alternative to xform result
-	pxfres->Add(pexprNormalized);
+	pxfres->Add(pexprDeduped);
 }
 
 // EOF
