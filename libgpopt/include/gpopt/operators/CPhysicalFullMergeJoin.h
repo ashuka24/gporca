@@ -63,7 +63,7 @@ namespace gpopt
 			virtual
 			CDistributionSpec *PdsRequired
 				(
-				IMemoryPool *mp,
+				CMemoryPool *mp,
 				CExpressionHandle &exprhdl,
 				CDistributionSpec *pdsRequired,
 				ULONG child_index,
@@ -103,6 +103,22 @@ namespace gpopt
 				(
 				CExpressionHandle &exprhdl,
 				const CEnfdOrder *peo
+				) const;
+
+			virtual
+			CEnfdDistribution::EDistributionMatching Edm
+				(
+				CReqdPropPlan *, // prppInput
+				ULONG , //child_index,
+				CDrvdProp2dArray *, // pdrgpdpCtxt,
+				ULONG // ulOptReq
+				);
+
+			virtual
+			CDistributionSpec *PdsDerive
+				(
+					CMemoryPool *mp,
+					CExpressionHandle &exprhdl
 				) const;
 
 	}; // class CPhysicalFullMergeJoin

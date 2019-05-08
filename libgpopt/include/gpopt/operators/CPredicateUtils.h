@@ -585,6 +585,11 @@ namespace gpopt
 			static
 			BOOL FBuiltInComparisonIsVeryStrict(IMDId *mdid);
 
+			// Check if the given expr only contains conjuncts of strict comparison operators
+			// NB: This does NOT recurse into Boolean AND/OR operations
+			static
+			BOOL ExprContainsOnlyStrictComparisons(CMemoryPool *mp, CExpression *expr);
+
 	}; // class CPredicateUtils
 }
 
