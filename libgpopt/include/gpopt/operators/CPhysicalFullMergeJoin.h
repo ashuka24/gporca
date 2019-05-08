@@ -105,6 +105,22 @@ namespace gpopt
 				const CEnfdOrder *peo
 				) const;
 
+			virtual
+			CEnfdDistribution::EDistributionMatching Edm
+				(
+				CReqdPropPlan *, // prppInput
+				ULONG , //child_index,
+				CDrvdProp2dArray *, // pdrgpdpCtxt,
+				ULONG // ulOptReq
+				);
+
+			virtual
+			CDistributionSpec *PdsDerive
+				(
+					IMemoryPool *mp,
+					CExpressionHandle &exprhdl
+				) const;
+
 	}; // class CPhysicalFullMergeJoin
 
 }
