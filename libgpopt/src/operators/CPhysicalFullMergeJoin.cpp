@@ -30,16 +30,30 @@ using namespace gpopt;
 // ctor
 CPhysicalFullMergeJoin::CPhysicalFullMergeJoin
 	(
-	CMemoryPool *mp
+	CMemoryPool *mp,
+	CExpressionArray *outer_merge_clauses,
+	CExpressionArray *inner_merge_clauses
 	)
 	:
-	CPhysicalJoin(mp)
-{}
+	CPhysicalJoin(mp),
+	m_outer_merge_clauses(outer_merge_clauses),
+	m_inner_merge_clauses(inner_merge_clauses)
+{
+	GPOS_ASSERT(NULL != mp);
+	GPOS_ASSERT(NULL != outer_merge_clauses);
+	GPOS_ASSERT(NULL != inner_merge_clauses);
+	GPOS_ASSERT(outer_merge_clauses->Size() == inner_merge_clauses->Size());
+
+	SetDistrRequests(2);
+}
 
 
 // dtor
 CPhysicalFullMergeJoin::~CPhysicalFullMergeJoin()
-{}
+{
+	m_outer_merge_clauses->Release();
+	m_inner_merge_clauses->Release();
+}
 
 CDistributionSpec *
 CPhysicalFullMergeJoin::PdsRequired
