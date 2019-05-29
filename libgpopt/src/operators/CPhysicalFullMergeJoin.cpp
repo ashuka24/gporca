@@ -187,12 +187,11 @@ CPhysicalFullMergeJoin::PrsRequired
 				"Required rewindability can be computed on the relational child only");
 
 	// if there are outer references, then we need a materialize on both children
-	if (exprhdl.HasOuterRefs())
+	if (child_index == 1)
 	{
-		return GPOS_NEW(mp) CRewindabilitySpec(CRewindabilitySpec::ErtRewindable, prsRequired->Emht());
+		return GPOS_NEW(mp) CRewindabilitySpec(CRewindabilitySpec::ErtMarkRestore, prsRequired->Emht());
 	}
 
-	// XXX TODO: this is probably all that's needed
 	// pass through requirements to outer child
 	return PrsPassThru(mp, exprhdl, prsRequired, child_index);
 }
