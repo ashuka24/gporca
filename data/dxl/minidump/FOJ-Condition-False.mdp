@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
+For this query, we enable the expansion of FOJ into the UNION expression as merge joins cannot handle a false condition.
+
 create table foo (a int);
 insert into foo (select generate_series(1,5));
 select * from foo a full join foo b on false;
