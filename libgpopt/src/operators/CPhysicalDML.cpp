@@ -377,12 +377,12 @@ CPhysicalDML::PdsDerive
 CRewindabilitySpec *
 CPhysicalDML::PrsDerive
 	(
-	IMemoryPool *, // mp
+	IMemoryPool *mp,
 	CExpressionHandle &exprhdl
 	)
 	const
 {
-	return PrsDerivePassThruOuter(exprhdl);
+	return PrsDerivePassThruOuter(mp, exprhdl);
 }
 
 //---------------------------------------------------------------------------

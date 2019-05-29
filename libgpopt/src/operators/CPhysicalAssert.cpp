@@ -279,12 +279,12 @@ CPhysicalAssert::PdsDerive
 CRewindabilitySpec *
 CPhysicalAssert::PrsDerive
 	(
-	IMemoryPool *, // mp
+	IMemoryPool *mp,
 	CExpressionHandle &exprhdl
 	)
 	const
 {
-	return PrsDerivePassThruOuter(exprhdl);
+	return PrsDerivePassThruOuter(mp, exprhdl);
 }
 
 

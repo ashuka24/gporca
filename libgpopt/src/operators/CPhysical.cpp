@@ -530,11 +530,20 @@ CPhysical::PdsDerivePassThruOuter
 CRewindabilitySpec *
 CPhysical::PrsDerivePassThruOuter
 	(
+	IMemoryPool *mp,
 	CExpressionHandle &exprhdl
 	)
 {
 	CRewindabilitySpec *prs = exprhdl.Pdpplan(0 /*child_index*/)->Prs();
-	prs->AddRef();
+
+	if (CRewindabilitySpec::ErtMarkRestore == prs->Ert())
+	{
+		prs = GPOS_NEW(mp) CRewindabilitySpec(CRewindabilitySpec::ErtRewindable, prs->Emht());
+	}
+	else
+	{
+		prs->AddRef();
+	}
 
 	return prs;
 }

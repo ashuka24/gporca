@@ -453,12 +453,12 @@ CPhysicalSplit::PdsDerive
 CRewindabilitySpec *
 CPhysicalSplit::PrsDerive
 	(
-	IMemoryPool *, // mp
+	IMemoryPool *mp,
 	CExpressionHandle &exprhdl
 	)
 	const
 {
-	return PrsDerivePassThruOuter(exprhdl);
+	return PrsDerivePassThruOuter(mp, exprhdl);
 }
 
 //---------------------------------------------------------------------------
