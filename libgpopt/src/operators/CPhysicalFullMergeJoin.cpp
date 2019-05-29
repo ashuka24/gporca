@@ -14,6 +14,7 @@
 #include "gpopt/base/CDistributionSpecNonSingleton.h"
 #include "gpopt/base/CDistributionSpecHashed.h"
 #include "gpopt/base/CCastUtils.h"
+#include "gpopt/base/CColRefSetIter.h"
 
 #include "gpopt/base/CUtils.h"
 
@@ -115,12 +116,11 @@ CPhysicalFullMergeJoin::PdsRequired
 	}
 }
 
-
 COrderSpec *
 CPhysicalFullMergeJoin::PosRequired
 	(
 	IMemoryPool *mp,
-	CExpressionHandle &exprhdl,
+	CExpressionHandle &, //exprhdl,
 	COrderSpec *, //posInput
 	ULONG child_index,
 	CDrvdProp2dArray *, //pdrgpdpCtxt
@@ -133,29 +133,40 @@ CPhysicalFullMergeJoin::PosRequired
 	// to predict the order of the output of the merge join. (This may not be true). In that
 	// case, it is better to not push down any order requests from above.
 
-	// This is complex. We need to sort each side depending on the join filter
-	// but also we need to include any order specs from above.
-
-	// For now, ignore required orders
-	// For now, not cache cache
-	// For now, assume that scalar expr is ident = ident ONLY
-
-	CExpression *pexprScalarChild = exprhdl.PexprScalarChild(2);
-	CExpression *pexprLHS = (*pexprScalarChild)[0];
-	CExpression *pexprRHS = (*pexprScalarChild)[1];
-	GPOS_ASSERT(CPredicateUtils::FComparison(pexprScalarChild, IMDType::EcmptEq));
-	GPOS_ASSERT(CUtils::FScalarIdent(pexprLHS));
-	GPOS_ASSERT(CUtils::FScalarIdent(pexprRHS));
-
 	COrderSpec *os = GPOS_NEW(mp) COrderSpec(mp);
-	CExpression *pexpr = (*pexprScalarChild)[child_index];
-	CScalarIdent *popScId = CScalarIdent::PopConvert(pexpr->Pop());
-	const CColRef *colref = popScId->Pcr();
-	// XXX TODO can be > depending on posInput
-	gpmd::IMDId *mdid = colref->RetrieveType()->GetMdidForCmpType(IMDType::EcmptL);
-	mdid->AddRef();
-	
-	os->Append(mdid, colref, COrderSpec::EntLast);
+
+	CExpressionArray *clauses;
+	if (child_index == 0)
+	{
+		clauses = m_outer_merge_clauses;
+	}
+	else
+	{
+		GPOS_ASSERT(child_index == 1);
+		clauses = m_inner_merge_clauses;
+	}
+
+	CColRefSet *ordering_cols = GPOS_NEW(mp) CColRefSet(mp);
+	for (ULONG ul = 0; ul < clauses->Size(); ++ul)
+	{
+		CExpression *expr = (*clauses)[ul];
+
+		GPOS_ASSERT(CUtils::FScalarIdent(expr));
+
+		const CColRef *colref = CCastUtils::PcrExtractFromScIdOrCastScId(expr);
+		ordering_cols->Include(colref);
+	}
+
+	CColRefSetIter iter(*ordering_cols);
+	while (iter.Advance())
+	{
+		CColRef *colref = iter.Pcr();
+		gpmd::IMDId *mdid = colref->RetrieveType()->GetMdidForCmpType(IMDType::EcmptL);
+		mdid->AddRef();
+		os->Append(mdid, colref, COrderSpec::EntLast);
+	}
+
+	ordering_cols->Release();
 
 	return os;
 }
