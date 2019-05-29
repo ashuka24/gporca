@@ -1358,7 +1358,7 @@ namespace gpopt
 			return;
 		}
 
-		IMemoryPool *mp = pxfctxt->Pmp();
+		CMemoryPool *mp = pxfctxt->Pmp();
 		CExpressionArray *pdrgpexprOuter = NULL;
 		CExpressionArray *pdrgpexprInner = NULL;
 
