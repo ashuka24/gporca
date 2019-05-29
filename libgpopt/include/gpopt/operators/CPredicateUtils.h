@@ -225,6 +225,9 @@ namespace gpopt
 			static
 			BOOL FIdentIDFConst(CExpression *pexpr);
 
+			static
+			BOOL FEqIdentsOfSameType(CExpression *pexpr);
+
 			// checks if comparison is between two columns, or a column and a const
 			static
 			BOOL FCompareColToConstOrCol(CExpression *pexprScalar);

@@ -18,11 +18,17 @@ namespace gpopt
 			// private copy ctor
 			CPhysicalFullMergeJoin(const CPhysicalFullMergeJoin &);
 
+			CExpressionArray *m_outer_merge_clauses;
+
+			CExpressionArray *m_inner_merge_clauses;
+
 		public:
 
 			// ctor
 			explicit
-			CPhysicalFullMergeJoin(CMemoryPool *mp);
+			CPhysicalFullMergeJoin(CMemoryPool *mp,
+								   CExpressionArray *outer_merge_clauses,
+								   CExpressionArray *inner_merge_clauses);
 
 			// dtor
 			virtual
