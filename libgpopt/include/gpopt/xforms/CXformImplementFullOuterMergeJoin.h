@@ -2,8 +2,8 @@
 //	Greenplum Database
 //	Copyright (C) 2013 EMC Corp.
 //
-#ifndef GPOPT_CXformImplementFullOuterJoin_H
-#define GPOPT_CXformImplementFullOuterJoin_H
+#ifndef GPOPT_CXformImplementFullOuterMergeJoin_H
+#define GPOPT_CXformImplementFullOuterMergeJoin_H
 
 #include "gpos/base.h"
 #include "gpopt/xforms/CXformExploration.h"
@@ -12,36 +12,36 @@ namespace gpopt
 {
 	using namespace gpos;
 
-	class CXformImplementFullOuterJoin : public CXformExploration
+	class CXformImplementFullOuterMergeJoin : public CXformExploration
 	{
 
 		private:
 
 			// private copy ctor
-			CXformImplementFullOuterJoin(const CXformImplementFullOuterJoin &);
+			CXformImplementFullOuterMergeJoin(const CXformImplementFullOuterMergeJoin &);
 
 		public:
 
 			// ctor
 			explicit
-			CXformImplementFullOuterJoin(CMemoryPool *mp);
+			CXformImplementFullOuterMergeJoin(CMemoryPool *mp);
 
 			// dtor
 			virtual
-			~CXformImplementFullOuterJoin() {}
+			~CXformImplementFullOuterMergeJoin() {}
 
 			// ident accessors
 			virtual
 			EXformId Exfid() const
 			{
-				return ExfImplementFullOuterJoin;
+				return ExfImplementFullOuterMergeJoin;
 			}
 
 			// return a string for xform name
 			virtual
 			const CHAR *SzId() const
 			{
-				return "CXformImplementFullOuterJoin";
+				return "CXformImplementFullOuterMergeJoin";
 			}
 
 			// compute xform promise for a given expression handle
@@ -58,9 +58,9 @@ namespace gpopt
 				)
 				const;
 
-	}; // class CXformImplementFullOuterJoin
+	}; // class CXformImplementFullOuterMergeJoin
 }
 
-#endif // !GPOPT_CXformImplementFullOuterJoin_H
+#endif // !GPOPT_CXformImplementFullOuterMergeJoin_H
 
 // EOF

@@ -91,7 +91,7 @@ CLogicalFullOuterJoin::PxfsCandidates
 {
 	CXformSet *xform_set = GPOS_NEW(mp) CXformSet(mp);
 	(void) xform_set->ExchangeSet(CXform::ExfExpandFullOuterJoin);
-	(void) xform_set->ExchangeSet(CXform::ExfImplementFullOuterJoin);
+	(void) xform_set->ExchangeSet(CXform::ExfImplementFullOuterMergeJoin);
 	return xform_set;
 }
 

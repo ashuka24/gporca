@@ -3,7 +3,7 @@
 //	Copyright (C) 2013 EMC Corp.
 
 #include "gpos/base.h"
-#include "gpopt/xforms/CXformImplementFullOuterJoin.h"
+#include "gpopt/xforms/CXformImplementFullOuterMergeJoin.h"
 #include "gpopt/operators/CPhysicalFullMergeJoin.h"
 #include "gpopt/xforms/CXformUtils.h"
 
@@ -13,7 +13,7 @@ using namespace gpopt;
 
 
 // ctor
-CXformImplementFullOuterJoin::CXformImplementFullOuterJoin
+CXformImplementFullOuterMergeJoin::CXformImplementFullOuterMergeJoin
 	(
 	CMemoryPool *mp
 	)
@@ -33,7 +33,7 @@ CXformImplementFullOuterJoin::CXformImplementFullOuterJoin
 {}
 
 CXform::EXformPromise
-CXformImplementFullOuterJoin::Exfp
+CXformImplementFullOuterMergeJoin::Exfp
 	(
 	CExpressionHandle & //exprhdl
 	)
@@ -43,7 +43,7 @@ CXformImplementFullOuterJoin::Exfp
 }
 
 void
-CXformImplementFullOuterJoin::Transform
+CXformImplementFullOuterMergeJoin::Transform
 	(
 	CXformContext *pxfctxt,
 	CXformResult *pxfres,
