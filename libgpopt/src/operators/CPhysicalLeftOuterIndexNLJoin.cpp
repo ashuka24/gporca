@@ -100,8 +100,8 @@ CPhysicalLeftOuterIndexNLJoin::PdsRequired
 	}
 
 	// shouldn't come here!
-	GPOS_RAISE(gpopt::ExmaGPOPT, gpopt::ExmiUnsupportedOp,
-			GPOS_WSZ_LIT("Left outer index nestloop join broadcasting outer side"));
+//	GPOS_RAISE(gpopt::ExmaGPOPT, gpopt::ExmiUnsupportedOp,
+//			GPOS_WSZ_LIT("Left outer index nestloop join broadcasting outer side"));
 	// otherwise, require outer child to be replicated
 	return GPOS_NEW(mp) CDistributionSpecReplicated();
 }
