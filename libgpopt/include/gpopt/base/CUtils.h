@@ -1096,6 +1096,14 @@ namespace gpopt
 
 			static
 			void AddExprs(CExpressionArrays *results_exprs, CExpressionArrays *input_exprs);
+
+			static
+			CDistributionSpecHashed * CreateMatchingHashedDistribution
+			 (
+			 CMemoryPool *mp,
+			 CExpression *pexprPred,
+			 CDistributionSpecHashed *pdshashed
+			 );
 	}; // class CUtils
 
 	// hash set from expressions

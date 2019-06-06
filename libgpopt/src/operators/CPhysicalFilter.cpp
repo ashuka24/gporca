@@ -339,46 +339,14 @@ CPhysicalFilter::PdsDerive
 
 	if (CDistributionSpec::EdtHashed == pdsChild->Edt() && exprhdl.HasOuterRefs()) {
 		CDistributionSpecHashed *pdshashed = CDistributionSpecHashed::PdsConvert(pdsChild);
-		CExpressionArray *pdrgpexprHashed = pdshashed->Pdrgpexpr();
-
 		CExpression *pexprFilterPred = exprhdl.PexprScalarChild(1);
-		CExpressionArray *pdrgpexpr = CPredicateUtils::PdrgpexprConjuncts(mp, pexprFilterPred);
 
-		CExpressionArray *pdrgpexprMatching = GPOS_NEW(mp) CExpressionArray(mp);
-		const ULONG size = pdrgpexprHashed->Size();
+		CDistributionSpecHashed *pdsResult = CUtils::CreateMatchingHashedDistribution(mp, pexprFilterPred, pdshashed);
 
-		BOOL fSuccess = true;
-		for (ULONG ul = 0; fSuccess && ul < size; ul++)
-		{
-			CExpression *pexpr = (*pdrgpexprHashed)[ul];
-			CExpression *pexprMatching = CUtils::PexprMatchEqualityOrINDF(pexpr, pdrgpexpr);
-			fSuccess = (NULL != pexprMatching);
-			if (fSuccess)
-			{
-				pexprMatching->AddRef();
-				pdrgpexprMatching->Append(pexprMatching);
-			}
-		}
-		pdrgpexpr->Release();
-
-		if (fSuccess)
-		{
-			GPOS_ASSERT(pdrgpexprMatching->Size() == pdrgpexprHashed->Size());
-
-			// create a matching hashed distribution request
-			BOOL fNullsColocated = pdshashed->FNullsColocated();
-			CDistributionSpecHashed *pdshashedEquiv = GPOS_NEW(mp) CDistributionSpecHashed(pdrgpexprMatching, fNullsColocated);
-
-			pdrgpexprHashed->AddRef();
-			CDistributionSpecHashed *pdshashedResult = GPOS_NEW(mp) CDistributionSpecHashed(pdrgpexprHashed, fNullsColocated, pdshashedEquiv);
-
+		if (NULL != pdsResult) {
 			pdsChild->Release();
-			return pdshashedResult;
+			return pdsResult;
 		}
-
-		pdrgpexprMatching->Release();
-
-		return pdsChild;
 	}
 
 	return pdsChild;
