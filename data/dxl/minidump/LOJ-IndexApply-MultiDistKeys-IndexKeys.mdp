@@ -1,43 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-Left outer index NL join with multiple distribution keys, multiple indexes (composite index + single column index) and equijoin condition.
-
-create table foo(a varchar, b int, c int) distributed by(a,b);
-create table bar(a varchar, b int, c int) distributed by(a,b);
-create table zoo(a varchar, b int, c int) with(appendonly=true) distributed by(a,b);
-create index bar_idx_ab on bar(b,a);
-create index bar_idx_a on bar(a);
-create index bar_idx_b on bar(b);
-create index bar_idx_c on bar(c);
-create index zoo_idx_ab on zoo(b,a);
-create index zoo_idx_a on zoo(a);
-create index zoo_idx_b on zoo(b);
-create index zoo_idx_c on zoo(c);
-set optimizer_enable_hashjoin=off;
-
-explain select * from foo left join bar on foo.a=bar.a and foo.b=bar.b and foo.c<bar.c left join zoo on zoo.a=foo.a and zoo.b=foo.b and zoo.c<foo.c;
-                                        QUERY PLAN
- Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..1295.00 rows=3 width=48)
-   ->  Nested Loop Left Join  (cost=0.00..1295.00 rows=1 width=48)
-         Join Filter: true
-         ->  Nested Loop Left Join  (cost=0.00..433.00 rows=1 width=32)
-               Join Filter: true
-               ->  Table Scan on foo  (cost=0.00..431.00 rows=1 width=16)
-               ->  Index Scan using bar_idx_ab on bar  (cost=0.00..2.00 rows=1 width=16)
-                     Index Cond: bar.b = foo.b AND bar.a::text = foo.a::text
-                     Filter: foo.c < bar.c
-         ->  Bitmap Table Scan on zoo  (cost=0.00..862.00 rows=1 width=16)
-               Recheck Cond: zoo.a::text = foo.a::text AND zoo.b = foo.b AND zoo.c < foo.c
-               ->  BitmapAnd  (cost=0.00..0.00 rows=0 width=0)
-                     ->  Bitmap Index Scan on zoo_idx_ab  (cost=0.00..0.00 rows=0 width=0)
-                           Index Cond: zoo.b = foo.b AND zoo.a::text = foo.a::text
-                     ->  Bitmap Index Scan on zoo_idx_c  (cost=0.00..0.00 rows=0 width=0)
-                           Index Cond: zoo.c < foo.c
- Settings:  optimizer=on
- Optimizer status: PQO version 2.53.11
-(18 rows)
--->
 <dxl:DXLMessage xmlns:dxl="http://greenplum.com/dxl/2010/12/">
+  <dxl:Comment><![CDATA[
+	Left outer index NL join with multiple distribution keys, multiple indexes (composite index + single column index) and equijoin condition.
+
+	create table foo(a varchar, b int, c int) distributed by(a,b);
+	create table bar(a varchar, b int, c int) distributed by(a,b);
+	create table zoo(a varchar, b int, c int) with(appendonly=true) distributed by(a,b);
+	create index bar_idx_ab on bar(b,a);
+	create index bar_idx_a on bar(a);
+	create index bar_idx_b on bar(b);
+	create index bar_idx_c on bar(c);
+	create index zoo_idx_ab on zoo(b,a);
+	create index zoo_idx_a on zoo(a);
+	create index zoo_idx_b on zoo(b);
+	create index zoo_idx_c on zoo(c);
+	set optimizer_enable_hashjoin=off;
+
+	explain select * from foo left join bar on foo.a=bar.a and foo.b=bar.b and foo.c<bar.c left join zoo on zoo.a=foo.a and zoo.b=foo.b and zoo.c<foo.c
+	                                         QUERY PLAN
+	 Gather Motion 3:1  (slice1; segments: 3)  (cost=0.00..1299.00 rows=3 width=48)
+	   ->  Nested Loop Left Join  (cost=0.00..1299.00 rows=1 width=48)
+	         Join Filter: true
+	         ->  Nested Loop Left Join  (cost=0.00..437.00 rows=1 width=32)
+	               Join Filter: true
+	               ->  Seq Scan on foo  (cost=0.00..431.00 rows=1 width=16)
+	               ->  Index Scan using bar_idx_ab on bar  (cost=0.00..6.00 rows=1 width=16)
+	                     Index Cond: ((b = foo.b) AND ((a)::text = (foo.a)::text))
+	                     Filter: (foo.c < c)
+	         ->  Bitmap Heap Scan on zoo  (cost=0.00..862.00 rows=1 width=16)
+	               Recheck Cond: ((((a)::text = (foo.a)::text) AND (b = foo.b)) AND (c < foo.c))
+	               ->  BitmapAnd  (cost=0.00..0.00 rows=0 width=0)
+	                     ->  Bitmap Index Scan on zoo_idx_ab  (cost=0.00..0.00 rows=0 width=0)
+	                           Index Cond: ((b = foo.b) AND ((a)::text = (foo.a)::text))
+	                     ->  Bitmap Index Scan on zoo_idx_c  (cost=0.00..0.00 rows=0 width=0)
+	                           Index Cond: (c < foo.c)
+	 Optimizer: Pivotal Optimizer (GPORCA) version 3.47.2
+  ]]>
+  </dxl:Comment>
   <dxl:Thread Id="0">
     <dxl:OptimizerConfig>
       <dxl:EnumeratorConfig Id="0" PlanSamples="0" CostThreshold="0"/>
