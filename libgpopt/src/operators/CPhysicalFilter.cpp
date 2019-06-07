@@ -335,7 +335,7 @@ CPhysicalFilter::PdsDerive
 	)
 	const
 {
-	CDistributionSpec *pdsChild = PdsDerivePassThruOuter(exprhdl); // returned a
+	CDistributionSpec *pdsChild = PdsDerivePassThruOuter(exprhdl);
 
 	if (CDistributionSpec::EdtHashed == pdsChild->Edt() && exprhdl.HasOuterRefs()) {
 		CDistributionSpecHashed *pdshashed = CDistributionSpecHashed::PdsConvert(pdsChild);
