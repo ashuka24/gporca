@@ -58,7 +58,7 @@ CorrelatedLeftSemiNLJoinWithLimit PushFilterToSemiJoinLeftChild;
 CAntiSemiJoinTest:
 AntiSemiJoin2Select-1 AntiSemiJoin2Select-2 NOT-IN-NotNullBoth NOT-IN-NullInner NOT-IN-NullOuter
 Correlated-AntiSemiJoin CorrelatedAntiSemiJoin-True Correlated-LASJ-With-Outer-Col
-Correlated-LASJ-With-Outer-Const Correlated-LASJ-With-Outer-Expr;
+Correlated-LASJ-With-Outer-Const Correlated-LASJ-With-Outer-Expr Hash-LASJ-IsDistinctFrom;
 
 CPredicateTest:
 ConvertBoolConstNullToConstTableFalseFilter 
