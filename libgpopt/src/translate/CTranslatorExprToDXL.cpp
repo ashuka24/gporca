@@ -7409,7 +7409,7 @@ CTranslatorExprToDXL::MakeDXLTableDescr
 			{
 				if (NULL != requiredProperties && NULL != requiredProperties->PcrsRequired())
 				{
-					GPOS_ASSERT(!requiredProperties->PcrsRequired()->FMember(colref));
+					GPOS_RTL_ASSERT(!requiredProperties->PcrsRequired()->FMember(colref));
 				}
 				continue;
 			}
