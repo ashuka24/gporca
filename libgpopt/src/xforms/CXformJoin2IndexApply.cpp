@@ -138,6 +138,9 @@ CXformJoin2IndexApply::CreateHomogeneousIndexApplyAlternatives
 
 	if (IMDIndex::EmdindBtree == emdtype)
 	{
+		// Currently we do not support btree indexes on AO tables
+		GPOS_ASSERT(!ptabdescInner->IsAOTable());
+
 		CreateHomogeneousBtreeIndexApplyAlternatives
 			(
 			mp,
@@ -275,6 +278,8 @@ CXformJoin2IndexApply::CreateAlternativesForBtreeIndex
 	CXformResult *pxfres
 	) const
 {
+	// Currently we do not support btree indexes on AO tables
+	GPOS_ASSERT(!pmdrel->IsAOTable());
 	CExpression *pexprLogicalIndexGet = CXformUtils::PexprLogicalIndexGet
 						(
 						 mp,
