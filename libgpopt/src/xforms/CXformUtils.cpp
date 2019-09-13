@@ -2347,6 +2347,12 @@ CXformUtils::FIndexApplicable
 			return false;
 		}
 	}
+	else if (emdindtype == IMDIndex::EmdindBitmap &&
+			 pmdindex->IndexType() == IMDIndex::EmdindBtree &&
+			 pmdrel->IsAOTable())
+	{
+		// continue, Btree indexes on AO tables can be treated as Bitmap tables
+	}
 	else if (emdindtype != pmdindex->IndexType() || // otherwise make sure the index matches the given type
 		0 == pcrsScalar->Size()) // no columns to match index against
 	{
