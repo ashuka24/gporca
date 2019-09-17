@@ -69,6 +69,45 @@ CFilterStatsProcessor::MakeStatsFilterForScalarExpr
 	return result_stats;
 }
 
+// compute the selectivity of a predicate, applied to a base table, ignoring outer refs
+CDouble
+CFilterStatsProcessor::SelectivityOfPredicate
+	(
+	 CMemoryPool *mp,
+	 CExpression *pred,
+	 CTableDescriptor *ptabdesc
+	)
+{
+	CColRefSet *used_col_refs = CDrvdPropScalar::GetDrvdScalarProps(pred->PdpDerive())->PcrsUsed();
+	// extract local filter
+	CStatsPred *pred_stats = CStatsPredUtils::ExtractPredStats(mp, pred, NULL);
+
+	const COptCtxt *poctxt = COptCtxt::PoctxtFromTLS();
+	CMDAccessor *md_accessor = poctxt->Pmda();
+	CStatisticsConfig *stats_config = poctxt->GetOptimizerConfig()->GetStatsConf();
+	CColRefSet *dummy_width_set = GPOS_NEW(mp) CColRefSet(mp);
+
+	IStatistics *base_table_stats = md_accessor->Pstats
+					(
+					 mp,
+					 ptabdesc->MDId(),
+					 used_col_refs,
+					 dummy_width_set,
+					 stats_config
+					 );
+
+	// derive stats based on local filter
+	IStatistics *result_stats = CFilterStatsProcessor::MakeStatsFilter(mp, dynamic_cast<CStatistics *>(base_table_stats), pred_stats, false);
+
+	CDouble result = result_stats->Rows() / base_table_stats->Rows();
+	pred_stats->Release();
+	result_stats->Release();
+	base_table_stats->Release();
+	dummy_width_set->Release();
+
+	return result;
+}
+
 // create new structure from a list of statistics filters
 CStatistics *
 CFilterStatsProcessor::MakeStatsFilter
