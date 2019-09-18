@@ -3356,7 +3356,7 @@ CXformUtils::PexprBitmapLookupWithPredicateBreakDown
 
 //---------------------------------------------------------------------------
 //	@function:
-//		CXformUtils::PexprBitmapForSelectCondition
+//		CXformUtils::PexprBitmap
 //
 //	@doc:
 //		Construct a bitmap index path expression for the given predicate coming
@@ -3580,6 +3580,33 @@ CXformUtils::PexprBitmapForIndexLookup
 		if (NULL != pexprLookupPred &&
 				CPredicateUtils::FCompatibleIndexPredicate(pexprLookupPred, pmdindex, pdrgpcrIndexCols, md_accessor))
 		{
+
+			// Btree indexes on AO tables are only great when the NDV is high. Do this check here
+			if (pmdrel->IsAOTable() && pmdindex->IndexType() == IMDIndex::EmdindBtree)
+			{
+				CDouble selectivity = CFilterStatsProcessor::SelectivityOfPredicate(mp, pexprLookupPred, ptabdesc);
+				if (selectivity > 0.05)
+				{
+					pdrgpcrIndexCols->Release();
+					pexprLookupPred->Release();
+					continue;
+				}
+			}
+
+			CColRefArray *indexColumns = CXformUtils::PdrgpcrIndexKeys(mp,pdrgpcrOutput, pmdindex, pmdrel);
+
+			// make sure the first key of index is included in the scalar predicate
+			const CColRef *pcrFirstIndexKey = (*indexColumns)[0];
+
+			if (!pcrsScalar->FMember(pcrFirstIndexKey))
+			{
+				pdrgpcrIndexCols->Release();
+				indexColumns->Release();
+				pexprLookupPred->Release();
+				continue;
+			}
+			indexColumns->Release();
+
 			pexprLookupPred->AddRef();
 			*ppexprRecheck = pexprLookupPred;
 			CIndexDescriptor *pindexdesc = CIndexDescriptor::Pindexdesc(mp, ptabdesc, pmdindex);
