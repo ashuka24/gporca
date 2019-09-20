@@ -3373,6 +3373,7 @@ CXformUtils::PexprBitmap
 	const IMDRelation *pmdrel,
 	CColRefArray *pdrgpcrOutput,
 	CColRefSet *pcrsReqd,
+	CColRefSet *pcrsOuterRefs,
 	CExpression **ppexprRecheck,
 	CExpression **ppexprResidual
 	)
@@ -3413,7 +3414,7 @@ CXformUtils::PexprBitmap
 				pdrgpcrIndexCols,
 				pdrgpexprIndex,
 				pdrgpexprResidual,
-				NULL  // pcrsAcceptedOuterRefs
+				pcrsOuterRefs
 				);
 
 			pdrgpexprScalar->Release();
@@ -3696,7 +3697,7 @@ CXformUtils::CreateBitmapIndexProbes
 	{
 		pexprRecheck = pexprResidual = pexprBitmap = NULL;
 
-		if (CPredicateUtils::FBitmapLookupSupportedPredicateOrConjunct(pexprPred))
+		if (CPredicateUtils::FBitmapLookupSupportedPredicateOrConjunct(pexprPred, pcrsOuterRefs))
 		{
 			// do not break the predicate down and lookup for an index covering maximum predicate columns,
 			// this is done in following scenario to generate optimal index paths.
@@ -3721,6 +3722,7 @@ CXformUtils::CreateBitmapIndexProbes
 							pmdrel,
 							pdrgpcrOutput,
 							pcrsReqd,
+							pcrsOuterRefs,
 							&pexprRecheck,
 							&pexprResidual
 							);
