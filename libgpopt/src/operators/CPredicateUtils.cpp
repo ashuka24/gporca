@@ -165,6 +165,48 @@ CPredicateUtils::FComparison
 	return false;
 }
 
+BOOL
+CPredicateUtils::FComparisonColWithOuterRefIgnoreCast
+(
+ CExpression *pexpr,
+ CColRefSet *pcrsAllowedRefs // other column references allowed in the comparison
+)
+{
+	GPOS_ASSERT(NULL != pexpr);
+
+	if (COperator::EopScalarCmp != pexpr->Pop()->Eopid() || NULL == pcrsAllowedRefs)
+	{
+		return false;
+	}
+
+	CExpression *pexprLeft = (*pexpr)[0];
+	CExpression *pexprRight = (*pexpr)[1];
+
+	BOOL leftIsACol = (CUtils::FScalarIdent(pexprLeft) ||
+					   CScalarIdent::FCastedScId(pexprLeft));
+	BOOL rightIsACol = (CUtils::FScalarIdent(pexprRight) ||
+						CScalarIdent::FCastedScId(pexprRight));
+	if (leftIsACol && rightIsACol)
+	{
+		// The size of pcrsUsed must be two before we exclude the outer refs.
+		// If exactly one of the operands is an outer ref, then we must have one element
+		// left in pcrsUsed after excluding the outer refs.
+		CDrvdPropScalar *pdpScalar = CDrvdPropScalar::GetDrvdScalarProps(pexpr->PdpDerive());
+
+		CColRefSet *pcrsUsed = pdpScalar->PcrsUsed();
+		GPOS_ASSERT(2 == pcrsUsed->Size());
+		if (pcrsUsed->FIntersects(pcrsAllowedRefs))
+		{
+			return true;
+		}
+
+
+	}
+
+
+	return false;
+}
+
 // Check whether the given expression contains references to only the given
 // columns. If pcrsAllowedRefs is NULL, then check whether the expression has
 // no column references and no volatile functions
@@ -2849,7 +2891,8 @@ CPredicateUtils::FCollapsibleChildUnionUnionAll
 BOOL
 CPredicateUtils::FBitmapLookupSupportedPredicateOrConjunct
 	(
-	CExpression *pexpr
+	CExpression *pexpr,
+	CColRefSet *outer_refs
 	)
 {
 	if (CPredicateUtils::FAnd(pexpr))
@@ -2858,13 +2901,15 @@ CPredicateUtils::FBitmapLookupSupportedPredicateOrConjunct
 		BOOL result = true;
 		for (ULONG ul = 0; ul < ulArity && result; ul++)
 		{
-			result = result && CPredicateUtils::FBitmapLookupSupportedPredicateOrConjunct((*pexpr)[ul]);
+			result = result && CPredicateUtils::FBitmapLookupSupportedPredicateOrConjunct((*pexpr)[ul], outer_refs);
 		}
 
 		return result;
 	}
 
+	// indexes allow ident cmp const and ident cmp outerref
 	if(CPredicateUtils::FIdentCompareConstIgnoreCast(pexpr, COperator::EopScalarCmp) ||
+	   CPredicateUtils::FComparisonColWithOuterRefIgnoreCast(pexpr, outer_refs) ||
 	   CPredicateUtils::FArrayCompareIdentToConstIgnoreCast(pexpr) ||
 	   CUtils::FScalarIdentBoolType(pexpr) ||
 	   (!CUtils::FScalarIdentBoolType(pexpr) && CPredicateUtils::FNotIdent(pexpr)))
