@@ -166,7 +166,7 @@ CPredicateUtils::FComparison
 }
 
 BOOL
-CPredicateUtils::FComparisonColWithOuterRefIgnoreCast
+CPredicateUtils::FIdentCompareOuterRefIgnoreCast
 (
  CExpression *pexpr,
  CColRefSet *pcrsAllowedRefs // other column references allowed in the comparison
@@ -2909,7 +2909,7 @@ CPredicateUtils::FBitmapLookupSupportedPredicateOrConjunct
 
 	// indexes allow ident cmp const and ident cmp outerref
 	if(CPredicateUtils::FIdentCompareConstIgnoreCast(pexpr, COperator::EopScalarCmp) ||
-	   CPredicateUtils::FComparisonColWithOuterRefIgnoreCast(pexpr, outer_refs) ||
+	   CPredicateUtils::FIdentCompareOuterRefIgnoreCast(pexpr, outer_refs) ||
 	   CPredicateUtils::FArrayCompareIdentToConstIgnoreCast(pexpr) ||
 	   CUtils::FScalarIdentBoolType(pexpr) ||
 	   (!CUtils::FScalarIdentBoolType(pexpr) && CPredicateUtils::FNotIdent(pexpr)))
