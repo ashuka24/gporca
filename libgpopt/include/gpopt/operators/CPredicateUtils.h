@@ -58,11 +58,6 @@ namespace gpopt
 			static
 			BOOL FComparison(CExpression *pexpr, CColRef *colref, CColRefSet *pcrsAllowedRefs);
 
-			// check if a given expression is a comparison between a column and a constant or
-			// an outer reference (from a given ColRefSet)
-			static
-			BOOL FComparisonColWithOuterRefIgnoreCast(CExpression *pexpr, CColRefSet *pcrsAllowedRefs);
-
 			// check whether the given expression contains references to only the given
 			// columns. If pcrsAllowedRefs is NULL, then check whether the expression has
 			// no column references and no volatile functions
@@ -202,6 +197,11 @@ namespace gpopt
 			// either the constant or the column can be casted
 			static
 			BOOL FIdentCompareConstIgnoreCast(CExpression *pexpr, COperator::EOperatorId);
+
+			// check if a given expression is a comparison between a column and a constant or
+			// an outer reference (from a given ColRefSet)
+			static
+			BOOL FIdentCompareOuterRefIgnoreCast(CExpression *pexpr, CColRefSet *pcrsAllowedRefs);
 
 			// is the given expression a comparison between scalar ident and a const array
 			// either the ident or constant array can be casted
