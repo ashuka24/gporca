@@ -186,25 +186,15 @@ CPredicateUtils::FIdentCompareOuterRefIgnoreCast
 					   CScalarIdent::FCastedScId(pexprLeft));
 	BOOL rightIsACol = (CUtils::FScalarIdent(pexprRight) ||
 						CScalarIdent::FCastedScId(pexprRight));
-	if (leftIsACol && rightIsACol)
-	{
-		// The size of pcrsUsed must be two before we exclude the outer refs.
-		// If exactly one of the operands is an outer ref, then we must have one element
-		// left in pcrsUsed after excluding the outer refs.
-		CDrvdPropScalar *pdpScalar = CDrvdPropScalar::GetDrvdScalarProps(pexpr->PdpDerive());
+    CColRefSet *pcrsUsedLeft = CDrvdPropScalar::GetDrvdScalarProps(pexprLeft->PdpDerive())->PcrsUsed();
+	CColRefSet *pcrsUsedRight = CDrvdPropScalar::GetDrvdScalarProps(pexprRight->PdpDerive())->PcrsUsed();
 
-		CColRefSet *pcrsUsed = pdpScalar->PcrsUsed();
-		GPOS_ASSERT(2 == pcrsUsed->Size());
-		if (pcrsUsed->FIntersects(pcrsAllowedRefs))
-		{
-			return true;
-		}
+	// allow any expressions of the form
+	//  col = expr(outer refs)
+	//  expr(outer refs) = col
+	return (leftIsACol && !pcrsAllowedRefs->FIntersects(pcrsUsedLeft) && pcrsAllowedRefs->ContainsAll(pcrsUsedRight)) ||
+		   (rightIsACol && !pcrsAllowedRefs->FIntersects(pcrsUsedRight) && pcrsAllowedRefs->ContainsAll(pcrsUsedLeft));
 
-
-	}
-
-
-	return false;
 }
 
 // Check whether the given expression contains references to only the given

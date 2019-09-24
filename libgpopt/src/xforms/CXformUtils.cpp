@@ -3321,6 +3321,7 @@ CXformUtils::PexprBitmapLookupWithPredicateBreakDown
 
 	if (NULL != pexprBitmapForIndexLookup)
 	{
+		GPOS_ASSERT(false);
 		return pexprBitmapForIndexLookup;
 	}
 
