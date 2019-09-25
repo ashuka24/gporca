@@ -169,7 +169,8 @@ BOOL
 CPredicateUtils::FIdentCompareOuterRefIgnoreCast
 (
  CExpression *pexpr,
- CColRefSet *pcrsAllowedRefs // other column references allowed in the comparison
+ CColRefSet *pcrsAllowedRefs, // other column references allowed in the comparison
+ CColRef **localColRef
 )
 {
 	GPOS_ASSERT(NULL != pexpr);
@@ -192,9 +193,29 @@ CPredicateUtils::FIdentCompareOuterRefIgnoreCast
 	// allow any expressions of the form
 	//  col = expr(outer refs)
 	//  expr(outer refs) = col
-	return (leftIsACol && !pcrsAllowedRefs->FIntersects(pcrsUsedLeft) && pcrsAllowedRefs->ContainsAll(pcrsUsedRight)) ||
-		   (rightIsACol && !pcrsAllowedRefs->FIntersects(pcrsUsedRight) && pcrsAllowedRefs->ContainsAll(pcrsUsedLeft));
+	BOOL colOpOuterref = (leftIsACol && !pcrsAllowedRefs->FIntersects(pcrsUsedLeft) && pcrsAllowedRefs->ContainsAll(pcrsUsedRight));
+	BOOL outerRefOpCol = (rightIsACol && !pcrsAllowedRefs->FIntersects(pcrsUsedRight) && pcrsAllowedRefs->ContainsAll(pcrsUsedLeft));
 
+	if (NULL != localColRef)
+	{
+		if (colOpOuterref)
+		{
+			GPOS_ASSERT(pcrsUsedLeft->Size() == 1);
+			*localColRef = pcrsUsedLeft->PcrFirst();
+		}
+		else if (outerRefOpCol)
+		{
+			GPOS_ASSERT(pcrsUsedRight->Size() == 1);
+			*localColRef = pcrsUsedRight->PcrFirst();
+		}
+		else
+		{
+			// return value with be false, initialize the variable to be nice
+			*localColRef = NULL;
+		}
+	}
+
+	return colOpOuterref || outerRefOpCol;
 }
 
 // Check whether the given expression contains references to only the given

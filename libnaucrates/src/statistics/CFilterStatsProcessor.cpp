@@ -69,7 +69,8 @@ CFilterStatsProcessor::MakeStatsFilterForScalarExpr
 	return result_stats;
 }
 
-// compute the selectivity of a predicate, applied to a base table, ignoring outer refs
+// compute the selectivity of a predicate, applied to a base table,
+// making some simple default assumptions about outer refs
 CDouble
 CFilterStatsProcessor::SelectivityOfPredicate
 	(
@@ -83,7 +84,15 @@ CFilterStatsProcessor::SelectivityOfPredicate
 	// separate the outer refs
 	CExpression *local_expr = NULL;
 	CExpression *expr_with_outer_refs = NULL;
-	CPredicateUtils::SeparateOuterRefs(mp, pred, outer_refs, &local_expr, &expr_with_outer_refs);
+
+	if (NULL != outer_refs)
+	{
+		CPredicateUtils::SeparateOuterRefs(mp, pred, outer_refs, &local_expr, &expr_with_outer_refs);
+	}
+	else
+	{
+		local_expr = pred;
+	}
 
 	// extract local filter
 	CStatsPred *pred_stats = CStatsPredUtils::ExtractPredStats(mp, local_expr, outer_refs);
@@ -109,7 +118,6 @@ CFilterStatsProcessor::SelectivityOfPredicate
 
 	CDouble result = result_stats->Rows() / base_table_stats->Rows();
 	pred_stats->Release();
-	result_stats->Release();
 	base_table_stats->Release();
 	dummy_width_set->Release();
 
@@ -122,19 +130,32 @@ CFilterStatsProcessor::SelectivityOfPredicate
 		for (ULONG ul = 0; ul < size; ul++)
 		{
 			CExpression *pexpr = (*outer_ref_exprs)[ul];
-			COperator::
-			if (CPredicateUtils::FIdentCompareOuterRefIgnoreCast(pexpr, outer_refs) && )
+			CColRef *local_col_ref = NULL;
+
+			if (CPredicateUtils::FIdentCompareOuterRefIgnoreCast(pexpr, outer_refs, &local_col_ref))
 			{
-				CScalarCmp *sc_cmp = CScalarCmp::PopConvert;
-				CDouble ndv = BLAH;
-				result = result * (1/ndv);
+				CScalarCmp *sc_cmp = CScalarCmp::PopConvert(pexpr->Pop());
+				if (IMDType::EcmptEq == sc_cmp->ParseCmpType())
+				{
+					GPOS_ASSERT(NULL != local_col_ref);
+					CDouble ndv = result_stats->GetNDVs(local_col_ref);
+					result = result * (1/ndv);
+				}
+				else
+				{
+					// a comparison col op <outer ref> other than an equals
+					result = result * 1/3;
+				}
 			}
 			else
 			{
+				// some other expression, not of the form col op <outer ref>,
+				// e.g. an OR expression
 				result = result * 1/3;
 			}
 		}
 	}
+	result_stats->Release();
 
 	return result;
 }
