@@ -91,6 +91,7 @@ CFilterStatsProcessor::SelectivityOfPredicate
 	}
 	else
 	{
+		pred->AddRef();
 		local_expr = pred;
 	}
 
@@ -144,18 +145,22 @@ CFilterStatsProcessor::SelectivityOfPredicate
 				else
 				{
 					// a comparison col op <outer ref> other than an equals
-					result = result * 1/3;
+					result = result * CHistogram::DefaultSelectivity;
 				}
 			}
 			else
 			{
 				// some other expression, not of the form col op <outer ref>,
 				// e.g. an OR expression
-				result = result * 1/3;
+				result = result * CHistogram::DefaultSelectivity;
 			}
 		}
+
+		expr_with_outer_refs->Release();
+		outer_ref_exprs->Release();
 	}
 	result_stats->Release();
+	local_expr->Release();
 
 	return result;
 }
