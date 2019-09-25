@@ -3242,7 +3242,41 @@ CXformUtils::PexprBitmapFromChildren
 
 	if (fConjunction)
 	{
-		pdrgpexpr = CPredicateUtils::PdrgpexprConjuncts(mp, pexprPred);
+		// Combine all the supported conjuncts into a single CExpression, to be able to
+		// pass them as one unit to PexprScalarBitmapBoolOp and to PexprBitmap, since we
+		// have optimizations that find the best multi-column index.
+
+		CExpressionArray *temp_conjuncts = CPredicateUtils::PdrgpexprConjuncts(mp, pexprPred);
+		CExpressionArray *supported_conjuncts = GPOS_NEW(mp) CExpressionArray(mp);
+
+		pdrgpexpr = GPOS_NEW(mp) CExpressionArray(mp);
+
+		const ULONG size = temp_conjuncts->Size();
+		for (ULONG ul=0; ul < size; ul++)
+		{
+			CExpression *pexpr = (*temp_conjuncts)[ul];
+
+			pexpr->AddRef();
+			if (CPredicateUtils::FBitmapLookupSupportedPredicateOrConjunct(pexpr, outer_refs))
+			{
+				supported_conjuncts->Append(pexpr);
+			}
+			else
+			{
+				pdrgpexpr->Append(pexpr);
+			}
+		}
+		temp_conjuncts->Release();
+
+		if (0 < supported_conjuncts->Size())
+		{
+			CExpression *anded_expr = CPredicateUtils::PexprConjunction(mp, supported_conjuncts);
+			pdrgpexpr->Append(anded_expr);
+		}
+		else
+		{
+			supported_conjuncts->Release();
+		}
 	}
 	else
 	{

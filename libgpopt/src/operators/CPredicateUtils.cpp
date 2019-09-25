@@ -754,9 +754,7 @@ CPredicateUtils::PexprConjDisj
 		eboolop = CScalarBoolOp::EboolopOr;
 	}
 
-	CExpressionArray *pdrgpexprFinal = pdrgpexpr;
-
-	pdrgpexprFinal = GPOS_NEW(mp) CExpressionArray(mp);
+	CExpressionArray *pdrgpexprFinal = GPOS_NEW(mp) CExpressionArray(mp);
 	ULONG size = 0;
 	if (NULL != pdrgpexpr)
 	{
