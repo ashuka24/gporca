@@ -75,16 +75,24 @@ CFilterStatsProcessor::SelectivityOfPredicate
 	(
 	 CMemoryPool *mp,
 	 CExpression *pred,
-	 CTableDescriptor *ptabdesc
+	 CTableDescriptor *ptabdesc,
+	 CColRefSet *outer_refs
 	)
 {
 	CColRefSet *used_col_refs = CDrvdPropScalar::GetDrvdScalarProps(pred->PdpDerive())->PcrsUsed();
+	// separate the outer refs
+	CExpression *local_expr = NULL;
+	CExpression *expr_with_outer_refs = NULL;
+	CPredicateUtils::SeparateOuterRefs(mp, pred, outer_refs, &local_expr, &expr_with_outer_refs);
+
 	// extract local filter
-	CStatsPred *pred_stats = CStatsPredUtils::ExtractPredStats(mp, pred, NULL);
+	CStatsPred *pred_stats = CStatsPredUtils::ExtractPredStats(mp, local_expr, outer_refs);
 
 	const COptCtxt *poctxt = COptCtxt::PoctxtFromTLS();
 	CMDAccessor *md_accessor = poctxt->Pmda();
+	// grab default stats config
 	CStatisticsConfig *stats_config = poctxt->GetOptimizerConfig()->GetStatsConf();
+	// we don't care about the width of the columns, just the row count
 	CColRefSet *dummy_width_set = GPOS_NEW(mp) CColRefSet(mp);
 
 	IStatistics *base_table_stats = md_accessor->Pstats
@@ -104,6 +112,29 @@ CFilterStatsProcessor::SelectivityOfPredicate
 	result_stats->Release();
 	base_table_stats->Release();
 	dummy_width_set->Release();
+
+	// handle outer_refs
+	if (NULL != expr_with_outer_refs)
+	{
+		CExpressionArray *outer_ref_exprs = CPredicateUtils::PdrgpexprConjuncts(mp, expr_with_outer_refs);
+
+		const ULONG size = outer_ref_exprs->Size();
+		for (ULONG ul = 0; ul < size; ul++)
+		{
+			CExpression *pexpr = (*outer_ref_exprs)[ul];
+			COperator::
+			if (CPredicateUtils::FIdentCompareOuterRefIgnoreCast(pexpr, outer_refs) && )
+			{
+				CScalarCmp *sc_cmp = CScalarCmp::PopConvert;
+				CDouble ndv = BLAH;
+				result = result * (1/ndv);
+			}
+			else
+			{
+				result = result * 1/3;
+			}
+		}
+	}
 
 	return result;
 }

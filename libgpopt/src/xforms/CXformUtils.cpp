@@ -3443,7 +3443,7 @@ CXformUtils::PexprBitmap
 			// Btree indexes on AO tables are only great when the NDV is high. Do this check here
 			if (pmdrel->IsAOTable() && pmdindex->IndexType() == IMDIndex::EmdindBtree)
 			{
-				CDouble selectivity = CFilterStatsProcessor::SelectivityOfPredicate(mp, pexprPred, ptabdesc);
+				CDouble selectivity = CFilterStatsProcessor::SelectivityOfPredicate(mp, pexprPred, ptabdesc, pcrsOuterRefs);
 				if (selectivity > 0.05)
 				{
 					pdrgpexprIndex->Release();

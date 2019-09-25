@@ -136,7 +136,8 @@ namespace gpnaucrates
 						(
 						 CMemoryPool *mp,
 						 CExpression *pred,
-						 CTableDescriptor *ptabdesc
+						 CTableDescriptor *ptabdesc,
+						 CColRefSet *pcrsOuterRefs
 						);
 	};
 }
