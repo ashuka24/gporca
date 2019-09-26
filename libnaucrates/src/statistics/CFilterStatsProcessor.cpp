@@ -150,9 +150,13 @@ CFilterStatsProcessor::SelectivityOfPredicate
 			}
 			else
 			{
-				// some other expression, not of the form col op <outer ref>,
-				// e.g. an OR expression
-				result = result * CHistogram::DefaultSelectivity;
+				// if it is a true filter, then we had no expressions with outer refs
+				if (!CUtils::FScalarConstTrue(pexpr))
+				{
+					// some other expression, not of the form col op <outer ref>,
+					// e.g. an OR expression
+					result = result * CHistogram::DefaultSelectivity;
+				}
 			}
 		}
 
