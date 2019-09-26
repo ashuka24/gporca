@@ -3347,7 +3347,9 @@ CXformUtils::PexprBitmapSelectBestIndex
 	CColRefSet *pcrsScalar = CDrvdPropScalar::GetDrvdScalarProps(pexprPred->PdpDerive())->PcrsUsed();
 	ULONG ulBestIndex = 0;
 	CExpression *pexprIndexFinal = NULL;
-	ULONG minResidual = gpos::ulong_max;
+	CDouble bestSelectivity = CDouble(2.0); // selectivity can be a max value of 1
+	ULONG bestNumResiduals = gpos::ulong_max;
+	ULONG bestNumIndexCols = gpos::ulong_max;
 
 	const ULONG ulIndexes = pmdrel->IndexCount();
 	for (ULONG ul = 0; ul < ulIndexes; ul++)
@@ -3405,16 +3407,19 @@ CXformUtils::PexprBitmapSelectBestIndex
 				continue;
 			}
 
+			pdrgpexprIndex->AddRef();
+			CExpression *pexprIndex = CPredicateUtils::PexprConjunction(mp, pdrgpexprIndex);
+
+			CDouble selectivity = CFilterStatsProcessor::SelectivityOfPredicate(mp, pexprIndex, ptabdesc, pcrsOuterRefs);
+
+			pexprIndex->Release();
+
 			// Btree indexes on AO tables are only great when the NDV is high. Do this check here
-			if (pmdrel->IsAOTable() && pmdindex->IndexType() == IMDIndex::EmdindBtree)
+			if (selectivity > 0.05 && pmdrel->IsAOTable() && pmdindex->IndexType() == IMDIndex::EmdindBtree)
 			{
-				CDouble selectivity = CFilterStatsProcessor::SelectivityOfPredicate(mp, pexprPred, ptabdesc, pcrsOuterRefs);
-				if (selectivity > 0.05)
-				{
-					pdrgpexprIndex->Release();
-					pdrgpexprResidual->Release();
-					continue;
-				}
+				pdrgpexprIndex->Release();
+				pdrgpexprResidual->Release();
+				continue;
 			}
 
 			CColRefArray *indexColumns = CXformUtils::PdrgpcrIndexKeys(mp,pdrgpcrOutput, pmdindex, pmdrel);
@@ -3430,10 +3435,17 @@ CXformUtils::PexprBitmapSelectBestIndex
 				continue;
 			}
 
-			// if this index covers more columns or in other words, generates lesser residuals than a
-			// previously found index, then replace best index match.
-			ULONG ulResidualLength = pdrgpexprResidual->Size();
-			if (minResidual > ulResidualLength)
+			ULONG numResiduals = pdrgpexprResidual->Size();
+			ULONG numIndexCols = indexColumns->Size();
+			// Score indexes by using three criteria:
+			// - selectivity of the index predicate (more selective, i.e. smaller selectivity value, is better)
+			// - number of residual predicates (fewer is better)
+			// - number of columns in the index
+			//   (with the same selectivity and # of residual preds, a smaller index is better)
+			if (bestSelectivity > selectivity ||
+				(bestSelectivity == selectivity && (bestNumResiduals > numResiduals ||
+													(bestNumResiduals == numResiduals && bestNumIndexCols >
+																						 numIndexCols))))
 			{
 				CRefCount::SafeRelease((*ppexprResidual));
 				pdrgpexprResidual->AddRef();
@@ -3448,7 +3460,9 @@ CXformUtils::PexprBitmapSelectBestIndex
 				}
 
 				ulBestIndex = ul;
-				minResidual = ulResidualLength;
+				bestSelectivity = selectivity;
+				bestNumResiduals = numResiduals;
+				bestNumIndexCols = numIndexCols;
 				pdrgpexprIndex->AddRef();
 				CRefCount::SafeRelease(pexprIndexFinal);
 				pexprIndexFinal = CPredicateUtils::PexprConjunction(mp, pdrgpexprIndex);

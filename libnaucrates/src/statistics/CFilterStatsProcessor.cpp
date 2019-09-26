@@ -140,7 +140,16 @@ CFilterStatsProcessor::SelectivityOfPredicate
 				{
 					GPOS_ASSERT(NULL != local_col_ref);
 					CDouble ndv = result_stats->GetNDVs(local_col_ref);
-					result = result * (1/ndv);
+
+					if (ndv < 1.0)
+					{
+						// An NDV of less than 1 means that we have no stats on this column
+						result = result * CHistogram::DefaultSelectivity;
+					}
+					else
+					{
+						result = result * (1/ndv);
+					}
 				}
 				else
 				{
