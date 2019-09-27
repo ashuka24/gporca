@@ -80,13 +80,16 @@ CFilterStatsProcessor::SelectivityOfPredicate
 	 CColRefSet *outer_refs
 	)
 {
-	CColRefSet *used_col_refs = CDrvdPropScalar::GetDrvdScalarProps(pred->PdpDerive())->PcrsUsed();
 	// separate the outer refs
 	CExpression *local_expr = NULL;
 	CExpression *expr_with_outer_refs = NULL;
 
+	CColRefSet *used_col_refs = CDrvdPropScalar::GetDrvdScalarProps(pred->PdpDerive())->PcrsUsed();
+	CColRefSet *used_local_col_refs = GPOS_NEW(mp) CColRefSet(mp, *used_col_refs);
+
 	if (NULL != outer_refs)
 	{
+		used_local_col_refs->Exclude(outer_refs);
 		CPredicateUtils::SeparateOuterRefs(mp, pred, outer_refs, &local_expr, &expr_with_outer_refs);
 	}
 	else
@@ -109,7 +112,7 @@ CFilterStatsProcessor::SelectivityOfPredicate
 					(
 					 mp,
 					 ptabdesc->MDId(),
-					 used_col_refs,
+					 used_local_col_refs,
 					 dummy_width_set,
 					 stats_config
 					 );
@@ -119,6 +122,7 @@ CFilterStatsProcessor::SelectivityOfPredicate
 
 	CDouble result = result_stats->Rows() / base_table_stats->Rows();
 	pred_stats->Release();
+	used_local_col_refs->Release();
 	base_table_stats->Release();
 	dummy_width_set->Release();
 
