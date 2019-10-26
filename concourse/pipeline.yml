@@ -34,6 +34,15 @@ groups:
     jobs:
     - gpdb_icg_with_orca
     - gpdb_icg_with_planner
+################
+# RESOURCE TYPES#
+################
+resource_types:
+
+- name: gcs
+  type: docker-image
+  source:
+    repository: frodenas/gcs-resource
 
 #############
 # RESOURCES #
@@ -43,8 +52,8 @@ resources:
 - name: gpdb_src
   type: git
   source:
-    branch: master
-    uri: https://github.com/greenplum-db/gpdb
+    branch: orca_configure
+    uri: https://github.com/asubramanya/gpdb
     paths:
       - config/orca.m4
 
@@ -185,33 +194,64 @@ resources:
     secret_access_key: {{s3_secret_access_key}}
     versioned_file: bin_orca_centos7_release.tar.gz
 
-- name: regression_diffs
+# - name: regression_diffs
+#   type: s3
+#   source:
+#     access_key_id: {{s3_access_key_id}}
+#     bucket: {{bucket-name}}
+#     region_name: {{aws-region}}
+#     secret_access_key: {{s3_secret_access_key}}
+#     versioned_file: regression.diffs
+
+# - name: regression_out
+#   type: s3
+#   source:
+#     access_key_id: {{s3_access_key_id}}
+#     bucket: {{bucket-name}}
+#     region_name: {{aws-region}}
+#     secret_access_key: {{s3_secret_access_key}}
+#     versioned_file: regression.out
+
+- name: bin_gpdb_ubuntu18
   type: s3
   source:
     access_key_id: {{s3_access_key_id}}
     bucket: {{bucket-name}}
     region_name: {{aws-region}}
     secret_access_key: {{s3_secret_access_key}}
-    versioned_file: regression.diffs
+    versioned_file: bin_gpdb.tar.gz
 
-- name: regression_out
-  type: s3
+- name: gpdb6-ubuntu18.04-build
   source:
-    access_key_id: {{s3_access_key_id}}
-    bucket: {{bucket-name}}
-    region_name: {{aws-region}}
-    secret_access_key: {{s3_secret_access_key}}
-    versioned_file: regression.out
+    repository: pivotaldata/gpdb6-ubuntu18.04-build
+    tag: latest
+  type: docker-image
 
-- name: bin_gpdb_centos6
-  type: s3
+- name: gpdb6-ubuntu18.04-test
+  type: docker-image
   source:
-    access_key_id: {{s3_access_key_id}}
-    bucket: {{bucket-name}}
-    region_name: {{aws-region}}
-    secret_access_key: {{s3_secret_access_key}}
-    versioned_file: bin_gpdb_with_orca_centos6.tar.gz
+    repository: pivotaldata/gpdb6-ubuntu18.04-test
+    tag: latest
 
+- name: python-ubuntu18.04
+  type: gcs
+  source:
+    bucket: ((gcs-bucket))
+    json_key: ((concourse-gcs-resources-service-account-key))
+    regexp: gp-internal-artifacts/ubuntu18.04/python-(2\.7\.12-.*).tar.gz
+
+- name: libquicklz-ubuntu18.04
+  type: gcs
+  source:
+    bucket: ((gcs-bucket))
+    json_key: ((concourse-gcs-resources-service-account-key))
+    regexp: gp-internal-artifacts/ubuntu18.04/libquicklz-dev_(1\.5\.0-.*)-1_amd64.deb
+
+- name: ubuntu18.04-build
+  source:
+    repository: pivotaldata/gpdb6-ubuntu18.04-build
+    tag: latest
+  type: docker-image
 ########
 # JOBS #
 ########
@@ -514,111 +554,76 @@ jobs:
 - name: build_gpdb
   plan:
   - in_parallel:
-    - &get_released_orca
-      get: bin_orca
-      resource: orca_github_release
-      params:
-        globs:
+      steps:
+      - &get_released_orca
+        get: bin_orca
+        params:
+          globs:
           - bin_orca_centos5_release.tar.gz
-      passed:
-      - orca_publish_tag
-    - get: bin_xerces
-      resource: bin_xerces_centos5
-      passed:
-      - xerces_centos5
-    - get: gpdb_src
-      params:
-        submodules: none
-      trigger: true
-  - task: build_with_orca
-    file: gpdb_src/concourse/tasks/build_with_orca.yml
+        passed:
+        - orca_centos5_release
+        resource: bin_orca_centos5_release
+      - get: bin_xerces
+        passed:
+        - xerces_ubuntu18
+        resource: bin_xerces_ubuntu18
+      - get: gpdb_src
+      - get: gpdb6-ubuntu18.04-build
+      - get: libquicklz-installer
+        resource: libquicklz-ubuntu18.04
+      - get: python-tarball
+        resource: python-ubuntu18.04
+  - file: gpdb_src/concourse/tasks/compile_gpdb.yml
+    image: gpdb6-ubuntu18.04-build
     params:
-      MODE: "--mode=orca"
-      OUTPUTDIR: "--output_dir=bin_gpdb/install"
-      ACTION: "--action=build"
-      CONFIGURE_OPTION: "--configure-option=--disable-gpcloud --configure-option=--enable-debug-extensions"
-      OTHER_CONFIGS: "--orca-in-gpdb-install-location  bin_orca bin_xerces"
-  - task: package_tarball
-    file: gpdb_src/concourse/tasks/package_tarball.yml
-    params:
-      src_root: bin_gpdb/install
-      dst_tarball: package_tarball/bin_gpdb.tar.gz
-  - put: bin_gpdb_centos6
-    params:
-      file: package_tarball/bin_gpdb.tar.gz
+      BLD_TARGETS: ""
+      CONFIGURE_FLAGS: "--enable-debug-extensions"
+      RC_BUILD_TYPE_GCS: ""
+      TARGET_OS: ubuntu
+      TARGET_OS_VERSION: "18.04"
+    task: compile_gpdb
+  - in_parallel:
+      steps:
+      - params:
+          file: gpdb_artifacts/bin_gpdb.tar.gz
+        put: bin_gpdb_ubuntu18
 
 - name: gpdb_icg_with_orca
   plan:
   - in_parallel:
-    - <<: *get_released_orca
-      passed:
-      - build_gpdb
-    - get: bin_xerces
-      resource: bin_xerces_centos5
-      passed:
-      - build_gpdb
-    - get: bin_gpdb
-      resource: bin_gpdb_centos6
-      passed:
-      - build_gpdb
-      trigger: true
-    - get: gpdb_src
-      passed:
-      - build_gpdb
-      params:
-        submodules: none
-  - task: icg_with_orca
-    timeout: 64m
-    file: gpdb_src/concourse/tasks/test_icg.yml
+      - get: gpdb_src
+        passed:
+        - build_gpdb
+      - get: bin_gpdb
+        resource: bin_gpdb_ubuntu18
+        passed:
+        - build_gpdb
+        trigger: true
+      - get: gpdb6-ubuntu18.04-test
+  - task: ic_gpdb
+    file: gpdb_src/concourse/tasks/ic_gpdb.yml
+    image: gpdb6-ubuntu18.04-test
     params:
-      BLDWRAP_POSTGRES_CONF_ADDONS: statement_mem=250MB
-      MODE: "--mode=orca"
-      ACTION: "--action=test"
-      CONFIGURE_OPTION: "--configure-option=--disable-gpcloud --configure-option=--enable-debug-extensions"
-      GPDB_BINARY: "--gpdb_name=bin_gpdb"
-    on_failure:
-      in_parallel:
-      - put: regression_diffs
-        params:
-          file: icg_output/regression.diffs
-      - put: regression_out
-        params:
-          file: icg_output/regression.out
+      MAKE_TEST_COMMAND: -k PGOPTIONS='-c optimizer=on' installcheck
+      TEST_OS: ubuntu
+      CONFIGURE_FLAGS: "--enable-debug-extensions --disable-thread-safety"
 
 - name: gpdb_icg_with_planner
   plan:
   - in_parallel:
-    - <<: *get_released_orca
-      passed:
-      - build_gpdb
-    - get: bin_xerces
-      resource: bin_xerces_centos5
-      passed:
-      - build_gpdb
-    - get: bin_gpdb
-      resource: bin_gpdb_centos6
-      passed:
-      - build_gpdb
-      trigger: true
-    - get: gpdb_src
-      passed:
-      - build_gpdb
-      params:
-        submodules: none
-  - task: icg_with_planner
-    timeout: 45m
-    file: gpdb_src/concourse/tasks/test_icg.yml
+      - get: gpdb_src
+        passed:
+        - build_gpdb
+      - get: bin_gpdb
+        resource: bin_gpdb_ubuntu18
+        passed:
+        - build_gpdb
+        trigger: true
+      - get: gpdb6-ubuntu18.04-test
+  - task: ic_gpdb
+    file: gpdb_src/concourse/tasks/ic_gpdb.yml
+    image: gpdb6-ubuntu18.04-test
     params:
-      BLDWRAP_POSTGRES_CONF_ADDONS: statement_mem=250MB
-      MODE: "--mode=planner"
-      ACTION: "--action=test"
-      CONFIGURE_OPTION: "--configure-option=--disable-gpcloud --configure-option=--enable-debug-extensions"
-      GPDB_BINARY: "--gpdb_name=bin_gpdb"
-    on_failure:
-      in_parallel:
-      - put: regression_diffs
-        params:
-          file: icg_output/regression.diffs
-      - put: regression_out
-        params:
-          file: icg_output/regression.out
+      MAKE_TEST_COMMAND: -k PGOPTIONS='-c optimizer=off' installcheck
+      TEST_OS: ubuntu
+      CONFIGURE_FLAGS: "--enable-debug-extensions --disable-thread-safety"
