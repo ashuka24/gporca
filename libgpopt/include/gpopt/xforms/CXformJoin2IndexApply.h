@@ -75,7 +75,8 @@ namespace gpopt
 				CTableDescriptor *ptabdescInner,
 				CColRefSet *outer_refs,
 				CColRefSet *pcrsReqd,
-				CXformResult *pxfres
+				CXformResult *pxfres,
+				CExpression * pexprScalarProject
 				) const;
 
 			// based on the inner and the scalar expression, it computes scalar expression
@@ -182,7 +183,8 @@ namespace gpopt
 				CTableDescriptor *PtabdescInner,
 				CLogicalDynamicGet *popDynamicGet,
 				CXformResult *pxfres,
-				gpmd::IMDIndex::EmdindexType emdtype
+				gpmd::IMDIndex::EmdindexType emdtype,
+				CExpression *pexprScalarProject
 				) const;
 
 			// helper to add IndexApply expression to given xform results container

@@ -138,9 +138,15 @@ namespace gpopt
 					GPOS_NEW(mp) CExpression  // inner child with Select operator
 						(
 						mp,
-						GPOS_NEW(mp) CLogicalSelect(mp),
-						GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) TGet(mp)), // Get below Select
-						GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternTree(mp))  // predicate
+						GPOS_NEW(mp) CLogicalProject(mp),
+						 GPOS_NEW(mp) CExpression  // inner child with project operator
+						 (
+						  mp,
+						  GPOS_NEW(mp) CLogicalSelect(mp), // select
+						  GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) TGet(mp)), // Get below Select
+						  GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternTree(mp))  // select predicate
+						  ),
+						GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternTree(mp))  // project list
 						)
 					:
 					GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) TGet(mp)), // inner child with Get operator,
@@ -171,11 +177,13 @@ namespace gpopt
 
 				CExpression *pexprGet = pexprInner;
 				CExpression *pexprAllPredicates = pexprScalar;
+				CExpression *pexprScalarProject = pexprInner;
 
 				if (fWithSelect)
 				{
-					pexprGet = (*pexprInner)[0];
-					pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*pexprInner)[1]);
+					pexprGet = (*(*pexprInner)[0])[0];
+					pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*(*pexprInner)[0])[1]);
+					pexprScalarProject = (*pexprInner)[1];
 				}
 				else
 				{
@@ -223,7 +231,8 @@ namespace gpopt
 						ptabdescInner,
 						popDynamicGet,
 						pxfres,
-						eidxtype
+						eidxtype,
+						pexprScalarProject
 						);
 				}
 				CRefCount::SafeRelease(pexprAllPredicates);
