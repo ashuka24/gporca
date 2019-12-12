@@ -401,15 +401,15 @@ CPhysical::PdsRequireSingletonOrReplicated
 	}
 
 	// if there are outer references, then we need a broadcast (or a gather)
-	if (exprhdl.HasOuterRefs())
-	{
-		if (0 == ulOptReq)
-		{
-			return GPOS_NEW(mp) CDistributionSpecReplicated();
-		}
-
-		return GPOS_NEW(mp) CDistributionSpecSingleton();
-	}
+//	if (exprhdl.HasOuterRefs())
+//	{
+//		if (0 == ulOptReq)
+//		{
+//			return GPOS_NEW(mp) CDistributionSpecReplicated();
+//		}
+//
+//		return GPOS_NEW(mp) CDistributionSpecSingleton();
+//	}
 
 	return NULL;
 }
