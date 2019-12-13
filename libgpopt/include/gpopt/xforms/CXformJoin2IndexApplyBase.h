@@ -149,7 +149,8 @@ namespace gpopt
 								GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternTree(mp))  // predicate
 								)
 							:
-							GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) TGet(mp)) // inner child with Get operator,
+							GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) TGet(mp)), // inner Get operator,
+						 GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternTree(mp))  // project predicate tree
 						 )
 					:
 					fWithSelect
@@ -190,17 +191,24 @@ namespace gpopt
 
 				CExpression *pexprGet = pexprInner;
 				CExpression *pexprAllPredicates = pexprScalar;
+				CExpression *pexprScalarProject = NULL;
 
-				if (fWithSelect || fWithProject)
+				if (fWithProject)
 				{
 					pexprGet = (*pexprInner)[0];
 					pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*pexprInner)[1]);
+					pexprScalarProject = (*pexprInner)[1];
 
-					if (fWithSelect && fWithProject)
+					if (fWithSelect)
 					{
 						pexprGet = (*(*pexprInner)[0])[0];
 						pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*(*pexprInner)[0])[1]);
 					}
+				}
+				else if (fWithSelect)
+				{
+					pexprGet = (*pexprInner)[0];
+					pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*pexprInner)[1]);
 				}
 				else
 				{
@@ -224,6 +232,7 @@ namespace gpopt
 				CTableDescriptor *ptabdescInner = TGet::PopConvert(pexprGet->Pop())->Ptabdesc();
 				if (is_partial)
 				{
+					// TODO_index: Do we need to add the scalar project option here?
 					CreatePartialIndexApplyAlternatives
 						(
 						mp,
@@ -245,6 +254,7 @@ namespace gpopt
 						pexprOuter,
 						pexprGet,
 						pexprAllPredicates,
+						pexprScalarProject,
 						ptabdescInner,
 						popDynamicGet,
 						pxfres,

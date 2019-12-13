@@ -101,6 +101,7 @@ CXformJoin2IndexApply::CreateHomogeneousIndexApplyAlternatives
 	CExpression *pexprOuter,
 	CExpression *pexprInner,
 	CExpression *pexprScalar,
+	CExpression *pexprScalarProject,
 	CTableDescriptor *ptabdescInner,
 	CLogicalDynamicGet *popDynamicGet,
 	CXformResult *pxfres,
@@ -136,6 +137,7 @@ CXformJoin2IndexApply::CreateHomogeneousIndexApplyAlternatives
 
 	if (IMDIndex::EmdindBtree == emdtype)
 	{
+		// TODO_index: add the scalar project option here in the btree case
 		CreateHomogeneousBtreeIndexApplyAlternatives
 			(
 			mp,
@@ -161,6 +163,7 @@ CXformJoin2IndexApply::CreateHomogeneousIndexApplyAlternatives
 			pexprOuter,
 			pexprInner,
 			pexprScalar,
+			pexprScalarProject,
 			ptabdescInner,
 			outer_refs,
 			pcrsReqd,
@@ -323,6 +326,7 @@ void CXformJoin2IndexApply::CreateHomogeneousBitmapIndexApplyAlternatives
 	CExpression *pexprOuter,
 	CExpression *pexprInner,
 	CExpression *pexprScalar,
+	CExpression *pexprScalarProject,
 	CTableDescriptor *ptabdescInner,
 	CColRefSet *outer_refs,
 	CColRefSet *pcrsReqd,
@@ -346,16 +350,36 @@ void CXformJoin2IndexApply::CreateHomogeneousBitmapIndexApplyAlternatives
 		// and add it to xform results
 		CColRefArray *colref_array = outer_refs->Pdrgpcr(mp);
 		pexprOuter->AddRef();
-		CExpression *pexprIndexApply =
+
+		// there was a project on top of the index, add it back here
+		if (NULL != pexprScalarProject)
+		{
+			pexprScalarProject->AddRef();
+			CExpression *pexprInnerChild = CUtils::PexprLogicalProject(mp, pexprLogicalIndexGet, pexprScalarProject, false);
+			CExpression *pexprIndexApply =
 			GPOS_NEW(mp) CExpression
 				(
-				mp,
-				PopLogicalApply(mp, colref_array),
-				pexprOuter,
-				pexprLogicalIndexGet,
-				CPredicateUtils::PexprConjunction(mp, NULL /*pdrgpexpr*/)
-				);
-		pxfres->Add(pexprIndexApply);
+				 mp,
+				 PopLogicalApply(mp, colref_array),
+				 pexprOuter,
+				 pexprInnerChild,
+				 CPredicateUtils::PexprConjunction(mp, NULL /*pdrgpexpr*/)
+				 );
+			pxfres->Add(pexprIndexApply);
+		}
+		else
+		{
+			CExpression *pexprIndexApply =
+				GPOS_NEW(mp) CExpression
+					(
+					mp,
+					PopLogicalApply(mp, colref_array),
+					pexprOuter,
+					pexprLogicalIndexGet,
+					CPredicateUtils::PexprConjunction(mp, NULL /*pdrgpexpr*/)
+					);
+			pxfres->Add(pexprIndexApply);
+		}
 	}
 }
 
