@@ -15,7 +15,7 @@ namespace gpopt
 {
 	using namespace gpos;
 
-	template<class TJoin, class TApply, class TGet, BOOL fWithSelect, BOOL is_partial, IMDIndex::EmdindexType eidxtype>
+	template<class TJoin, class TApply, class TGet, BOOL fWithSelect, BOOL fWithProject, BOOL is_partial, IMDIndex::EmdindexType eidxtype>
 	class CXformJoin2IndexApplyBase : public CXformJoin2IndexApply
 	{
 		private:
@@ -118,7 +118,7 @@ namespace gpopt
 
 			// ctor
 			explicit
-			CXformJoin2IndexApplyBase<TJoin, TApply, TGet, fWithSelect, is_partial, eidxtype>(CMemoryPool *mp)
+			CXformJoin2IndexApplyBase<TJoin, TApply, TGet, fWithSelect, fWithProject, is_partial, eidxtype>(CMemoryPool *mp)
 			:
 			// pattern
 			CXformJoin2IndexApply
@@ -133,6 +133,25 @@ namespace gpopt
 				GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternTree(mp)) // outer child
 				:
 				GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternLeaf(mp)), // outer child
+					fWithProject
+					?
+					GPOS_NEW(mp) CExpression // inner child with Project Operator
+						(
+						mp,
+						GPOS_NEW(mp) CLogicalProject(mp),
+							fWithSelect
+							?
+							GPOS_NEW(mp) CExpression  // inner child with Select under project operator
+								(
+								mp,
+								GPOS_NEW(mp) CLogicalSelect(mp),
+								GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) TGet(mp)), // Get below Select
+								GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) CPatternTree(mp))  // predicate
+								)
+							:
+							GPOS_NEW(mp) CExpression(mp, GPOS_NEW(mp) TGet(mp)) // inner child with Get operator,
+						 )
+					:
 					fWithSelect
 					?
 					GPOS_NEW(mp) CExpression  // inner child with Select operator
@@ -151,7 +170,7 @@ namespace gpopt
 
 			// dtor
 			virtual
-			~CXformJoin2IndexApplyBase<TJoin, TApply, TGet, fWithSelect, is_partial, eidxtype>()
+			~CXformJoin2IndexApplyBase<TJoin, TApply, TGet, fWithSelect, fWithProject, is_partial, eidxtype>()
 			{}
 
 			// actual transform
@@ -172,10 +191,16 @@ namespace gpopt
 				CExpression *pexprGet = pexprInner;
 				CExpression *pexprAllPredicates = pexprScalar;
 
-				if (fWithSelect)
+				if (fWithSelect || fWithProject)
 				{
 					pexprGet = (*pexprInner)[0];
 					pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*pexprInner)[1]);
+
+					if (fWithSelect && fWithProject)
+					{
+						pexprGet = (*(*pexprInner)[0])[0];
+						pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*(*pexprInner)[0])[1]);
+					}
 				}
 				else
 				{
