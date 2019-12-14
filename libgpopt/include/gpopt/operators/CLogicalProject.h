@@ -86,7 +86,11 @@ namespace gpopt
 			// derive output columns
 			virtual
 			CColRefSet *DeriveOutputColumns(CMemoryPool *mp, CExpressionHandle &exprhdl);
-			
+
+			// derive outer references
+			virtual
+			CColRefSet *DeriveOuterReferences(CMemoryPool *mp, CExpressionHandle &exprhdl);
+
 			// dervive keys
 			virtual 
 			CKeyCollection *DeriveKeyCollection(CMemoryPool *mp, CExpressionHandle &exprhdl) const;
