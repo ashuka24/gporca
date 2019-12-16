@@ -212,6 +212,8 @@ CBitSet *CXform::PbsBitmapIndexXforms
 			GPOPT_DISABLE_XFORM_TF(CXform::ExfInnerJoinWithInnerSelect2DynamicBitmapIndexGetApply));
 	(void) pbs->ExchangeSet(
 			GPOPT_DISABLE_XFORM_TF(CXform::ExfInnerJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply));
+	(void) pbs->ExchangeSet(
+			GPOPT_DISABLE_XFORM_TF(CXform::ExfLeftOuterJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply));
 
 	return pbs;
 }
