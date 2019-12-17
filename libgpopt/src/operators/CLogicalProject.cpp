@@ -211,52 +211,6 @@ CLogicalProject::ExtractConstraintFromScConst
 
 //---------------------------------------------------------------------------
 //	@function:
-//		CLogicalProject::DeriveOuterReferences
-//
-//	@doc:
-//		Derive outer references
-//
-//---------------------------------------------------------------------------
-CColRefSet *
-CLogicalProject::DeriveOuterReferences
-	(
-	CMemoryPool *mp,
-	CExpressionHandle &exprhdl
-	)
-{
-	CExpression *pexpr = exprhdl.Pexpr();
-	CExpression *pexprChild = (*pexpr)[0];
-	if (NULL != pexprChild && pexprChild->Arity() != 0)
-	{
-		COperator::EOperatorId eopidChild = (*pexprChild)[0]->Pop()->Eopid();
-		if (COperator::EopLogicalBitmapTableGet == eopidChild ||
-			COperator::EopLogicalDynamicBitmapTableGet == eopidChild)
-		{
-			CColRefSet *outer_refs = GPOS_NEW(mp) CColRefSet(mp);
-
-			CColRefSet *pcrsOutput = DeriveOutputColumns(mp, exprhdl);
-
-			CColRefSet *pcrsUsed = GPOS_NEW(mp) CColRefSet(mp);
-			GPOS_ASSERT(exprhdl.FScalarChild(1));
-			pcrsUsed->Union(exprhdl.DeriveUsedColumns(1));
-
-			// outer references are columns used by scalar children
-			// but are not included in the output columns of relational children
-			outer_refs->Union(pcrsUsed);
-			outer_refs->Exclude(pcrsOutput);
-
-			pcrsOutput->Release();
-			pcrsUsed->Release();
-			return outer_refs;
-		}
-	}
-
-	return CLogical::DeriveOuterReferences(mp, exprhdl);
-}
-
-
-//---------------------------------------------------------------------------
-//	@function:
 //		CLogicalProject::DerivePropertyConstraint
 //
 //	@doc:
