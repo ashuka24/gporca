@@ -145,6 +145,7 @@ CXformJoin2IndexApply::CreateHomogeneousIndexApplyAlternatives
 			pexprOuter,
 			pexprInner,
 			pexprScalar,
+			pexprScalarProject,
 			ptabdescInner,
 			popDynamicGet,
 			pcrsScalarExpr,
@@ -193,6 +194,7 @@ CXformJoin2IndexApply::CreateHomogeneousBtreeIndexApplyAlternatives
 	CExpression *pexprOuter,
 	CExpression *pexprInner,
 	CExpression *pexprScalar,
+	CExpression *pexprScalarProject,
 	CTableDescriptor *ptabdescInner,
 	CLogicalDynamicGet *popDynamicGet,
 	CColRefSet *pcrsScalarExpr,
@@ -233,6 +235,7 @@ CXformJoin2IndexApply::CreateHomogeneousBtreeIndexApplyAlternatives
 			ulOriginOpId,
 			pexprOuter,
 			pexprInner,
+			pexprScalarProject,
 			md_accessor,
 			pdrgpexpr,
 			pcrsScalarExpr,
@@ -265,6 +268,7 @@ CXformJoin2IndexApply::CreateAlternativesForBtreeIndex
 	ULONG ulOriginOpId,
 	CExpression *pexprOuter,
 	CExpression *pexprInner,
+	CExpression *pexprScalarProject,
 	CMDAccessor *md_accessor,
 	CExpressionArray *pdrgpexprConjuncts,
 	CColRefSet *pcrsScalarExpr,
@@ -297,16 +301,37 @@ CXformJoin2IndexApply::CreateAlternativesForBtreeIndex
 		// and add it to xform results
 		CColRefArray *colref_array = outer_refs->Pdrgpcr(mp);
 		pexprOuter->AddRef();
-		CExpression *pexprIndexApply =
+
+		// there was a project on top of the index, add it back here
+		if (NULL != pexprScalarProject)
+		{
+			pexprScalarProject->AddRef();
+			CExpression *pexprIndexApply =
 			GPOS_NEW(mp) CExpression
-				(
-				mp,
-				PopLogicalApply(mp, colref_array),
-				pexprOuter,
-				pexprLogicalIndexGet,
-				CPredicateUtils::PexprConjunction(mp, NULL /*pdrgpexpr*/)
-				);
-		pxfres->Add(pexprIndexApply);
+			(
+			 mp,
+			 PopLogicalApply(mp, colref_array),
+			 pexprOuter,
+			 pexprLogicalIndexGet,
+			 CPredicateUtils::PexprConjunction(mp, NULL /*pdrgpexpr*/)
+			 );
+			CExpression *pexprProject = CUtils::PexprLogicalProject(mp, pexprIndexApply, pexprScalarProject, false);
+
+			pxfres->Add(pexprProject);
+		}
+		else
+		{
+			CExpression *pexprIndexApply =
+				GPOS_NEW(mp) CExpression
+					(
+					mp,
+					PopLogicalApply(mp, colref_array),
+					pexprOuter,
+					pexprLogicalIndexGet,
+					CPredicateUtils::PexprConjunction(mp, NULL /*pdrgpexpr*/)
+					);
+			pxfres->Add(pexprIndexApply);
+		}
 	}
 }
 
