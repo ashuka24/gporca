@@ -115,6 +115,10 @@ IndexApply-InnerSelect-PartTable2 IndexApply-ForPartialIndex CastedScalarIf-On-I
 IndexApply-MultiDistKey-WithComplexPreds IndexApply-MultiDistKeys-Bitmap
 IndexApply-MultiDistKeys-Bitmap-WithComplexPreds;
 
+CIndexApplyWithProjectTest: 
+BitmapIndexApply-InnerProjectOnSelect-InnerJoin-PartTable
+BitmapIndexApply-InnerProjectOnSelect-LOJ-PartTable;
+
 CDynamicIndexScanTest:
 DynamicIndexScan-Homogenous DynamicIndexScan-BoolTrue DynamicIndexScan-BoolFalse
 DynamicIndexScan-Heterogenous-NoDTS DynamicIndexScan-Heterogenous-Union
