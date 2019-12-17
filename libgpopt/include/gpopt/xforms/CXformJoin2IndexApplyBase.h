@@ -195,15 +195,18 @@ namespace gpopt
 
 				if (fWithProject)
 				{
-					pexprGet = (*pexprInner)[0];
-					pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*pexprInner)[1]);
-					pexprScalarProject = (*pexprInner)[1];
-
 					if (fWithSelect)
 					{
-						pexprGet = (*(*pexprInner)[0])[0];
+						pexprGet = (*(*pexprInner)[0])[0]; // select under project
 						pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*(*pexprInner)[0])[1]);
 					}
+					else
+					{
+						pexprGet = (*pexprInner)[0]; // get under project
+						pexprAllPredicates = CPredicateUtils::PexprConjunction(mp, pexprScalar, (*pexprInner)[1]);
+					}
+
+					pexprScalarProject = (*pexprInner)[1];
 				}
 				else if (fWithSelect)
 				{
