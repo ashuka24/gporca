@@ -222,7 +222,9 @@ namespace gpopt
 				ExfLeftOuterJoin2DynamicIndexGetApply,
 				ExfLeftOuterJoinWithInnerSelect2DynamicBitmapIndexGetApply,
 				ExfLeftOuterJoinWithInnerSelect2DynamicIndexGetApply,
+				ExfInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply,
 				ExfInnerJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply,
+				ExfLeftOuterJoinWithInnerProjectOnSelect2BitmapIndexGetApply,
 				ExfLeftOuterJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply,
 				ExfInvalid,
 				ExfSentinel = ExfInvalid

@@ -6,7 +6,7 @@
 //		CXformLeftOuterJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply.h
 //
 //	@doc:
-//		Transform Inner Join with a Project on Select over a partitioned table 
+//		Transform Left Outer Join with a Project on Select over a partitioned table 
 //		on the inner branch to a dynamic Bitmap IndexGet Apply
 //
 //	@owner:

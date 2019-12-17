@@ -127,6 +127,7 @@
 #include "gpopt/xforms/CXformInnerJoin2DynamicBitmapIndexGetApply.h"
 #include "gpopt/xforms/CXformInnerJoinWithInnerSelect2BitmapIndexGetApply.h"
 #include "gpopt/xforms/CXformInnerJoinWithInnerSelect2DynamicBitmapIndexGetApply.h"
+#include "gpopt/xforms/CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply.h"
 #include "gpopt/xforms/CXformInnerJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply.h"
 
 #include "gpopt/xforms/CXformInnerApply2InnerJoin.h"
@@ -140,6 +141,7 @@
 #include "gpopt/xforms/CXformLeftOuterJoin2DynamicIndexGetApply.h"
 #include "gpopt/xforms/CXformLeftOuterJoinWithInnerSelect2DynamicBitmapIndexGetApply.h"
 #include "gpopt/xforms/CXformLeftOuterJoinWithInnerSelect2DynamicIndexGetApply.h"
+#include "gpopt/xforms/CXformLeftOuterJoinWithInnerProjectOnSelect2BitmapIndexGetApply.h"
 #include "gpopt/xforms/CXformLeftOuterJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply.h"
 #include "gpopt/xforms/CXformLeftOuterApply2LeftOuterJoin.h"
 #include "gpopt/xforms/CXformLeftOuterApply2LeftOuterJoinNoCorrelations.h"

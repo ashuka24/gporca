@@ -296,7 +296,9 @@ CXformFactory::Instantiate()
 	Add(GPOS_NEW(m_mp) CXformLeftOuterJoin2DynamicIndexGetApply(m_mp));
 	Add(GPOS_NEW(m_mp) CXformLeftOuterJoinWithInnerSelect2DynamicBitmapIndexGetApply(m_mp));
 	Add(GPOS_NEW(m_mp) CXformLeftOuterJoinWithInnerSelect2DynamicIndexGetApply(m_mp));
+	Add(GPOS_NEW(m_mp) CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply(m_mp));
 	Add(GPOS_NEW(m_mp) CXformInnerJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply(m_mp));
+	Add(GPOS_NEW(m_mp) CXformLeftOuterJoinWithInnerProjectOnSelect2BitmapIndexGetApply(m_mp));
 	Add(GPOS_NEW(m_mp) CXformLeftOuterJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply(m_mp));
 
 	GPOS_ASSERT(NULL != m_rgpxf[CXform::ExfSentinel - 1] &&
