@@ -37,7 +37,7 @@ namespace gpopt
 	//---------------------------------------------------------------------------
 	class CXformLeftOuterJoinWithInnerProjectOnSelect2IndexGetApply : public CXformJoin2IndexApplyBase
 		<CLogicalLeftOuterJoin, CLogicalIndexApply, CLogicalGet,
-		true /*fWithSelect*/, true /*fWithProject*/, false /*is_partial*/, IMDIndex::Emdind>
+		true /*fWithSelect*/, true /*fWithProject*/, false /*is_partial*/, IMDIndex::EmdindBtree>
 	{
 		private:
 			// private copy ctor
@@ -52,7 +52,7 @@ namespace gpopt
 			CXformLeftOuterJoinWithInnerProjectOnSelect2IndexGetApply(CMemoryPool *mp)
 				: CXformJoin2IndexApplyBase
 				 <CLogicalLeftOuterJoin, CLogicalIndexApply, CLogicalGet,
-				 true /*fWithSelect*/, true /*fWithProject*/, false /*is_partial*/, IMDIndex::Emdind>
+				 true /*fWithSelect*/, true /*fWithProject*/, false /*is_partial*/, IMDIndex::EmdindBtree>
 				(mp)
 			{}
 
