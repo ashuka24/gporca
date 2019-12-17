@@ -6,7 +6,7 @@
 //		CXformLeftOuterJoinWithInnerProjectOnSelect2BitmapIndexGetApply.h
 //
 //	@doc:
-//		Transform Left Outer Join with a Project on Select over a table 
+//		Transform Left Outer Join with a Project on Select over a table
 //		on the inner branch to a Bitmap IndexGet Apply
 //
 //	@owner:

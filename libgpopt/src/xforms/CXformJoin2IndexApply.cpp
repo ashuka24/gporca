@@ -137,7 +137,6 @@ CXformJoin2IndexApply::CreateHomogeneousIndexApplyAlternatives
 
 	if (IMDIndex::EmdindBtree == emdtype)
 	{
-		// TODO_index: add the scalar project option here in the btree case
 		CreateHomogeneousBtreeIndexApplyAlternatives
 			(
 			mp,

@@ -3,11 +3,11 @@
 //	Copyright (C) 2019 Pivotal, Inc.
 //
 //	@filename:
-//		CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply.h
+//		CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply.h
 //
 //	@doc:
 //		Transform Inner Join with a Project on Select over a table
-//		on the inner branch to a Bitmap IndexGet Apply
+//		on the inner branch to a IndexGet Apply
 //
 //	@owner:
 //		n
@@ -16,8 +16,8 @@
 //
 //---------------------------------------------------------------------------
 
-#ifndef GPOPT_CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply_H
-#define GPOPT_CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply_H
+#ifndef GPOPT_CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply_H
+#define GPOPT_CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply_H
 
 #include "gpos/base.h"
 #include "gpopt/xforms/CXformJoin2IndexApplyBase.h"
@@ -28,50 +28,50 @@ namespace gpopt
 
 	//---------------------------------------------------------------------------
 	//	@class:
-	//		CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply
+	//		CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply
 	//
 	//	@doc:
 	//		Transform Inner Join with a Select over a table on the inner branch
-	//		to Bitmap IndexGet Apply
+	//		to IndexGet Apply
 	//
 	//---------------------------------------------------------------------------
-	class CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply : public CXformJoin2IndexApplyBase
+	class CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply : public CXformJoin2IndexApplyBase
 		<CLogicalInnerJoin, CLogicalIndexApply, CLogicalGet,
-		true /*fWithSelect*/, true /*fWithProject*/, false /*is_partial*/, IMDIndex::EmdindBitmap>
+		true /*fWithSelect*/, true /*fWithProject*/, false /*is_partial*/, IMDIndex::Emdind>
 	{
 		private:
 			// private copy ctor
-			CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply
+			CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply
 				(
-				const CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply &
+				const CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply &
 				);
 
 		public:
 			// ctor
 			explicit
-			CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply(CMemoryPool *mp)
+			CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply(CMemoryPool *mp)
 				: CXformJoin2IndexApplyBase
 				 <CLogicalInnerJoin, CLogicalIndexApply, CLogicalGet,
-				 true /*fWithSelect*/, true /*fWithProject*/, false /*is_partial*/, IMDIndex::EmdindBitmap>
+				 true /*fWithSelect*/, true /*fWithProject*/, false /*is_partial*/, IMDIndex::Emdind>
 				(mp)
 			{}
 
 			// dtor
 			virtual
-			~CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply()
+			~CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply()
 			{}
 
 			// ident accessors
 			virtual
 			EXformId Exfid() const
 			{
-				return ExfInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply;
+				return ExfInnerJoinWithInnerProjectOnSelect2IndexGetApply;
 			}
 
 			virtual
 			const CHAR *SzId() const
 			{
-				return "CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply";
+				return "CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply";
 			}
 
 			// return true if xform should be applied only once
@@ -81,9 +81,9 @@ namespace gpopt
 				return true;
 			}
 
-	}; // class CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply
+	}; // class CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply
 }
 
-#endif // !GPOPT_CXformInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply_H
+#endif // !GPOPT_CXformInnerJoinWithInnerProjectOnSelect2IndexGetApply_H
 
 // EOF
