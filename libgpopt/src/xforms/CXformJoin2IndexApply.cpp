@@ -355,17 +355,18 @@ void CXformJoin2IndexApply::CreateHomogeneousBitmapIndexApplyAlternatives
 		if (NULL != pexprScalarProject)
 		{
 			pexprScalarProject->AddRef();
-			CExpression *pexprInnerChild = CUtils::PexprLogicalProject(mp, pexprLogicalIndexGet, pexprScalarProject, false);
 			CExpression *pexprIndexApply =
 			GPOS_NEW(mp) CExpression
 				(
 				 mp,
 				 PopLogicalApply(mp, colref_array),
 				 pexprOuter,
-				 pexprInnerChild,
+				 pexprLogicalIndexGet,
 				 CPredicateUtils::PexprConjunction(mp, NULL /*pdrgpexpr*/)
 				 );
-			pxfres->Add(pexprIndexApply);
+			CExpression *pexprProject = CUtils::PexprLogicalProject(mp, pexprIndexApply, pexprScalarProject, false);
+
+			pxfres->Add(pexprProject);
 		}
 		else
 		{
