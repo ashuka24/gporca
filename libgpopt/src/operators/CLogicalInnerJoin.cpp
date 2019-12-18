@@ -92,7 +92,9 @@ CLogicalInnerJoin::PxfsCandidates
 	(void) xform_set->ExchangeSet(CXform::ExfInnerJoinWithInnerSelect2BitmapIndexGetApply);
 	(void) xform_set->ExchangeSet(CXform::ExfInnerJoinWithInnerSelect2DynamicBitmapIndexGetApply);
 	(void) xform_set->ExchangeSet(CXform::ExfInnerJoinWithInnerProjectOnSelect2BitmapIndexGetApply);
+	(void) xform_set->ExchangeSet(CXform::ExfInnerJoinWithInnerProjectOnSelect2IndexGetApply);
 	(void) xform_set->ExchangeSet(CXform::ExfInnerJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply);
+	(void) xform_set->ExchangeSet(CXform::ExfInnerJoinWithInnerProjectOnSelect2DynamicIndexGetApply);
 
 	(void) xform_set->ExchangeSet(CXform::ExfJoinCommutativity);
 	(void) xform_set->ExchangeSet(CXform::ExfJoinAssociativity);

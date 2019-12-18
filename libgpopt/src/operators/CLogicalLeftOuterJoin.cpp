@@ -99,7 +99,9 @@ CLogicalLeftOuterJoin::PxfsCandidates
 	(void) xform_set->ExchangeSet(CXform::ExfLeftOuterJoinWithInnerSelect2DynamicBitmapIndexGetApply);
 	(void) xform_set->ExchangeSet(CXform::ExfLeftOuterJoinWithInnerSelect2DynamicIndexGetApply);
 	(void) xform_set->ExchangeSet(CXform::ExfLeftOuterJoinWithInnerProjectOnSelect2BitmapIndexGetApply);
+	(void) xform_set->ExchangeSet(CXform::ExfLeftOuterJoinWithInnerProjectOnSelect2IndexGetApply);
 	(void) xform_set->ExchangeSet(CXform::ExfLeftOuterJoinWithInnerProjectOnSelect2DynamicBitmapIndexGetApply);
+	(void) xform_set->ExchangeSet(CXform::ExfLeftOuterJoinWithInnerProjectOnSelect2DynamicIndexGetApply);
 
 	return xform_set;
 }
