@@ -1611,7 +1611,7 @@ CCostModelGPDB::CostBitmapSmallNDV
 		effectiveNDV = rows;
 	}
 
-	return CCost(pci->NumRebinds() * (dBitmapIO * dSize + dBitmapPageCost * effectiveNDV));
+	return CCost(pci->NumRebinds() * (dBitmapIO * dSize) + (dBitmapPageCost * effectiveNDV));
 }
 
 
@@ -1638,7 +1638,7 @@ CCostModelGPDB::CostBitmapLargeNDV
 	CDouble dBitmapIO = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapIOCostLargeNDV)->Get();
 	CDouble dBitmapPageCost = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapPageCostLargeNDV)->Get();
 
-	return CCost(pci->NumRebinds() * (dBitmapIO * dSize + dBitmapPageCost * dNDV));
+	return CCost(pci->NumRebinds() * (dBitmapIO * dSize) + (dBitmapPageCost * dNDV));
 }
 
 //---------------------------------------------------------------------------
