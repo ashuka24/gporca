@@ -1602,6 +1602,7 @@ CCostModelGPDB::CostBitmapSmallNDV
 	CDouble dSize = (rows * width) * 0.001;
 
 	CDouble dBitmapIO = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapIOCostSmallNDV)->Get();
+	CDouble dInitRebind = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapScanRebindCost)->Get();
 	CDouble dBitmapPageCost = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapPageCostSmallNDV)->Get();
 	CDouble effectiveNDV = dNDV;
 
@@ -1611,7 +1612,9 @@ CCostModelGPDB::CostBitmapSmallNDV
 		effectiveNDV = rows;
 	}
 
-	return CCost(pci->NumRebinds() * (dBitmapIO * dSize) + (dBitmapPageCost * effectiveNDV));
+	// similar to multi-column/multi-pred bitmap scans, we want to return the cost of each byte returned by the index scan
+	// plus cost for incremental rebinds as well as the bitmap init cost
+	return CCost(pci->NumRebinds() * (dBitmapIO * dSize + dInitRebind * effectiveNDV) + dBitmapPageCost);
 }
 
 
@@ -1636,9 +1639,10 @@ CCostModelGPDB::CostBitmapLargeNDV
 
 	CDouble dSize = (rows * width * dNDV) * 0.001;
 	CDouble dBitmapIO = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapIOCostLargeNDV)->Get();
+	CDouble dInitRebind = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapScanRebindCost)->Get();
 	CDouble dBitmapPageCost = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapPageCostLargeNDV)->Get();
 
-	return CCost(pci->NumRebinds() * (dBitmapIO * dSize) + (dBitmapPageCost * dNDV));
+	return CCost(pci->NumRebinds() * (dBitmapIO * dSize + dInitRebind * dNDV) + dBitmapPageCost);
 }
 
 //---------------------------------------------------------------------------
