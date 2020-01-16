@@ -198,6 +198,103 @@ CJoinCardinalityTest::EresUnittest_Join()
 		{"../data/dxl/statistics/Join-Statistics-Text-Input.xml", "../data/dxl/statistics/Join-Statistics-Text-Output.xml", false, PdrgpstatspredjoinSingleJoinPredicate},
 	};
 
+	CColumnFactory *col_factory = COptCtxt::PoctxtFromTLS()->Pcf();
+	const IMDTypeInt4 *pmdtypeint4 = COptCtxt::PoctxtFromTLS()->Pmda()->PtMDType<IMDTypeInt4>();
+
+	CWStringConst strRelAlias(GPOS_WSZ_LIT("Rel1"));
+	CWStringConst strCol1(GPOS_WSZ_LIT("col_0"));
+	CWStringConst strCol2(GPOS_WSZ_LIT("col_16"));
+	CWStringConst strCol3(GPOS_WSZ_LIT("col_31"));
+	CWStringConst strCol4(GPOS_WSZ_LIT("col_32"));
+	CWStringConst strCol5(GPOS_WSZ_LIT("col_53"));
+	CWStringConst strCol6(GPOS_WSZ_LIT("col_54"));
+
+
+	if (NULL == col_factory->LookupColRef(0 /*id*/))
+	{
+		// create column references for grouping columns
+		(void) col_factory->PcrCreate
+		(
+		 pmdtypeint4,
+		 default_type_modifier,
+		 0 /* attno */,
+		 false /*IsNullable*/,
+		 0 /* id */,
+		 CName(&strCol1),
+		 0
+		 );
+	}
+
+	if (NULL == col_factory->LookupColRef(16 /*id*/))
+	{
+		(void) col_factory->PcrCreate
+		(
+		 pmdtypeint4,
+		 default_type_modifier,
+		 1 /* attno */,
+		 false /*IsNullable*/,
+		 16 /* id */,
+		 CName(&strCol2),
+		 0
+		 );
+	}
+
+	if (NULL == col_factory->LookupColRef(31 /*id*/))
+	{
+		(void) col_factory->PcrCreate
+		(
+		 pmdtypeint4,
+		 default_type_modifier,
+		 2 /* attno */,
+		 false /*IsNullable*/,
+		 31 /* id */,
+		 CName(&strCol3),
+		 0
+		 );
+	}
+
+	if (NULL == col_factory->LookupColRef(32 /*id*/))
+	{
+		(void) col_factory->PcrCreate
+		(
+		 pmdtypeint4,
+		 default_type_modifier,
+		 3 /* attno */,
+		 false /*IsNullable*/,
+		 32 /* id */,
+		 CName(&strCol4),
+		 0
+		 );
+	}
+
+	if (NULL == col_factory->LookupColRef(53 /*id*/))
+	{
+		(void) col_factory->PcrCreate
+		(
+		 pmdtypeint4,
+		 default_type_modifier,
+		 4 /* attno */,
+		 false /*IsNullable*/,
+		 53 /* id */,
+		 CName(&strCol5),
+		 0
+		 );
+	}
+
+	if (NULL == col_factory->LookupColRef(54 /*id*/))
+	{
+		(void) col_factory->PcrCreate
+		(
+		 pmdtypeint4,
+		 default_type_modifier,
+		 5 /* attno */,
+		 false /*IsNullable*/,
+		 54 /* id */,
+		 CName(&strCol6),
+		 0
+		 );
+	}
+
 	const ULONG ulTestCases = GPOS_ARRAY_SIZE(rgstatsjointc);
 	for (ULONG ul = 0; ul < ulTestCases; ul++)
 	{
