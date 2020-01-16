@@ -201,146 +201,38 @@ CJoinCardinalityTest::EresUnittest_Join()
 	CColumnFactory *col_factory = COptCtxt::PoctxtFromTLS()->Pcf();
 	const IMDTypeInt4 *pmdtypeint4 = COptCtxt::PoctxtFromTLS()->Pmda()->PtMDType<IMDTypeInt4>();
 
-	CWStringConst strCol1(GPOS_WSZ_LIT("col_0"));
-	CWStringConst strCol2(GPOS_WSZ_LIT("col_16"));
-	CWStringConst strCol3(GPOS_WSZ_LIT("col_31"));
-	CWStringConst strCol4(GPOS_WSZ_LIT("col_32"));
-	CWStringConst strCol5(GPOS_WSZ_LIT("col_53"));
-	CWStringConst strCol6(GPOS_WSZ_LIT("col_54"));
-	CWStringConst strCol7(GPOS_WSZ_LIT("col_1"));
-	CWStringConst strCol8(GPOS_WSZ_LIT("col_2"));
-	CWStringConst strCol9(GPOS_WSZ_LIT("col_8"));
+	ULongPtrArray *cols = GPOS_NEW(mp) ULongPtrArray(mp);
+	cols->Append(GPOS_NEW(mp) ULONG(0));
+	cols->Append(GPOS_NEW(mp) ULONG(1));
+	cols->Append(GPOS_NEW(mp) ULONG(2));
+	cols->Append(GPOS_NEW(mp) ULONG(8));
+	cols->Append(GPOS_NEW(mp) ULONG(16));
+	cols->Append(GPOS_NEW(mp) ULONG(31));
+	cols->Append(GPOS_NEW(mp) ULONG(32));
+	cols->Append(GPOS_NEW(mp) ULONG(53));
+	cols->Append(GPOS_NEW(mp) ULONG(54));
 
-
-	if (NULL == col_factory->LookupColRef(0 /*id*/))
+	for (ULONG ul  = 0; ul < cols->Size(); ul++)
 	{
-		// create column references for grouping columns
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		 0 /* attno */,
-		 false /*IsNullable*/,
-		 0 /* id */,
-		 CName(&strCol1),
-		 0
-		 );
+		ULONG id = *((*cols)[ul]);
+		if (NULL == col_factory->LookupColRef(id))
+		{
+			// for this test the col name doesn't matter
+			CWStringConst str(GPOS_WSZ_LIT("col"));
+			// create column references for grouping columns
+			(void) col_factory->PcrCreate
+			(
+			 pmdtypeint4,
+			 default_type_modifier,
+			 ul /* attno */,
+			 false /*IsNullable*/,
+			 id,
+			 CName(&str),
+			 0
+			 );
+		}
 	}
-
-	if (NULL == col_factory->LookupColRef(16 /*id*/))
-	{
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		 1 /* attno */,
-		 false /*IsNullable*/,
-		 16 /* id */,
-		 CName(&strCol2),
-		 0
-		 );
-	}
-
-	if (NULL == col_factory->LookupColRef(31 /*id*/))
-	{
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		 2 /* attno */,
-		 false /*IsNullable*/,
-		 31 /* id */,
-		 CName(&strCol3),
-		 0
-		 );
-	}
-
-	if (NULL == col_factory->LookupColRef(32 /*id*/))
-	{
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		 3 /* attno */,
-		 false /*IsNullable*/,
-		 32 /* id */,
-		 CName(&strCol4),
-		 0
-		 );
-	}
-
-	if (NULL == col_factory->LookupColRef(53 /*id*/))
-	{
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		 4 /* attno */,
-		 false /*IsNullable*/,
-		 53 /* id */,
-		 CName(&strCol5),
-		 0
-		 );
-	}
-
-	if (NULL == col_factory->LookupColRef(54 /*id*/))
-	{
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		 5 /* attno */,
-		 false /*IsNullable*/,
-		 54 /* id */,
-		 CName(&strCol6),
-		 0
-		 );
-	}
-
-	if (NULL == col_factory->LookupColRef(1 /*id*/))
-	{
-		// create column references for grouping columns
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		 6 /* attno */,
-		 false /*IsNullable*/,
-		 1 /* id */,
-		 CName(&strCol7),
-		 0
-		 );
-	}
-
-	if (NULL == col_factory->LookupColRef(2 /*id*/))
-	{
-		// create column references for grouping columns
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		 7 /* attno */,
-		 false /*IsNullable*/,
-		 2 /* id */,
-		 CName(&strCol8),
-		 0
-		 );
-	}
-
-	if (NULL == col_factory->LookupColRef(8 /*id*/))
-	{
-		// create column references for grouping columns
-		(void) col_factory->PcrCreate
-		(
-		 pmdtypeint4,
-		 default_type_modifier,
-		8 /* attno */,
-		 false /*IsNullable*/,
-		 8 /* id */,
-		 CName(&strCol9),
-		 0
-		 );
-	}
+	cols->Release();
 
 	const ULONG ulTestCases = GPOS_ARRAY_SIZE(rgstatsjointc);
 	for (ULONG ul = 0; ul < ulTestCases; ul++)
