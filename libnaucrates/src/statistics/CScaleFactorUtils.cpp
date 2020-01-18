@@ -134,7 +134,7 @@ CalcCumulativeScaleFactorSqrtAlg
 			{
 				nth_root = 2<<(ul-1);
 			}
-			cumulative_scale_factor = cumulative_scale_factor * local_scale_factor.Pow(CDouble(1)/nth_root);
+			cumulative_scale_factor = cumulative_scale_factor * std::max(CStatistics::MinRows.Get(), local_scale_factor.Pow(CDouble(1)/nth_root).Get());
 		}
 	}
 
