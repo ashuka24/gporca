@@ -402,6 +402,7 @@ CStatisticsTest::EresUnittest_CStatisticsBasic()
 				(
 				pmdtypeint4,
 				default_type_modifier,
+				NULL,
 				0 /* attno */,
 				false /*IsNullable*/,
 				1 /* id */,
@@ -416,6 +417,7 @@ CStatisticsTest::EresUnittest_CStatisticsBasic()
 				(
 				pmdtypeint4,
 				default_type_modifier,
+				NULL,
 				1 /* attno */,
 				false /*IsNullable*/,
 				2 /* id */,
@@ -430,6 +432,7 @@ CStatisticsTest::EresUnittest_CStatisticsBasic()
 		(
 		 pmdtypeint4,
 		 default_type_modifier,
+		 NULL,
 		 2 /* attno */,
 		 false /*IsNullable*/,
 		 10 /* id */,

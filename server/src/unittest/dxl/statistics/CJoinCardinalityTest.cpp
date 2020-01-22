@@ -224,6 +224,7 @@ CJoinCardinalityTest::EresUnittest_Join()
 			(
 			 pmdtypeint4,
 			 default_type_modifier,
+			 NULL,
 			 ul /* attno */,
 			 false /*IsNullable*/,
 			 id,

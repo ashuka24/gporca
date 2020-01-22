@@ -72,15 +72,15 @@ namespace gpopt
 			// name: SQL alias or artificial name
 			const CName *m_pname;
 
-			// table info
-			IMDId *m_mdid_table;
-
 			// private copy ctor
 			CColRef(const CColRef &);
 
 			// track the usage of colref (used/unused/unknown)
 			EUsedStatus m_used;
-			
+
+			// table info
+			IMDId *m_mdid_table;
+
 		public:
 		
 			enum Ecolreftype
@@ -221,7 +221,7 @@ namespace gpopt
 				return m_used;
 			}
 
-			IMDId* GetMdidTable()
+			IMDId* GetMdidTable() const
 			{
 				return m_mdid_table;
 			};
