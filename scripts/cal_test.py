@@ -54,6 +54,14 @@ BITMAP_SCAN = "bitmap_scan"
 BITMAP_SCAN_PATTERN = r"Bitmap Heap Scan"
 BITMAP_SCAN_PATTERN_V5 = r"Bitmap Table Scan"
 
+HASH_JOIN = "hash_join"
+HASH_JOIN_PATTERN = r"Hash Join"
+HASH_JOIN_PATTERN_V5 = r"Hash Join"
+
+NL_JOIN = "nl_join"
+NL_JOIN_PATTERN = r"Nested Loop"
+NL_JOIN_PATTERN_V5 = r"Nested Loop"
+
 OPTIMIZER_DEFAULT_PLAN = "optimizer"
 
 
@@ -446,6 +454,53 @@ def explain_index_scan(conn, sqlStr):
                 elif re.search(table_scan_pattern, row[0]):
                     scan_type = TABLE_SCAN
                     cost = cost_from_explain_line(row[0])
+
+    except Exception as e:
+        log_output("\n*** ERROR explaining query:\n%s;\nReason: %s" % ("explain " + sqlStr, e))
+
+    return (scan_type, cost)
+
+
+# Explain a query and find a join in an explain output
+# return the scan type and the corresponding cost.
+# Use this for scan-related tests.
+
+def explain_join_scan(conn, sqlStr):
+    cost = -1.0
+    scan_type = ""
+    try:
+        log_output("")
+        log_output("Executing query: %s" % ("explain " + sqlStr))
+        exp_curs = dbconn.execSQL(conn, "explain " + sqlStr)
+        rows = exp_curs.fetchall()
+        hash_join_pattern = HASH_JOIN_PATTERN
+        nl_join_pattern = NL_JOIN_PATTERN
+        table_scan_pattern = TABLE_SCAN_PATTERN
+        index_scan_pattern = INDEX_SCAN_PATTERN
+        bitmap_scan_pattern = BITMAP_SCAN_PATTERN
+        if (glob_gpdb_major_version) <= 5:
+            hash_join_pattern = HASH_JOIN_PATTERN_V5
+            nl_join_pattern = NL_JOIN_PATTERN_V5
+            table_scan_pattern = TABLE_SCAN_PATTERN_V5
+            index_scan_pattern = INDEX_SCAN_PATTERN_V5
+            bitmap_scan_pattern = BITMAP_SCAN_PATTERN_V5
+
+        # save the cost of the join above the scan type
+        for row in rows:
+            log_output(row[0])
+            if re.search(nl_join_pattern, row[0]):
+                cost = cost_from_explain_line(row[0])
+            elif re.search(hash_join_pattern, row[0]):
+                cost = cost_from_explain_line(row[0])
+            # mark the scan type used underneath the join
+            if re.search(TABLE_NAME_PATTERN, row[0]):
+                if re.search(bitmap_scan_pattern, row[0]):
+                    scan_type = BITMAP_SCAN
+                elif re.search(index_scan_pattern, row[0]):
+                    scan_type = INDEX_SCAN
+                elif re.search(table_scan_pattern, row[0]):
+                    scan_type = TABLE_SCAN
+
 
     except Exception as e:
         log_output("\n*** ERROR explaining query:\n%s;\nReason: %s" % ("explain " + sqlStr, e))
@@ -874,7 +929,7 @@ def run_one_bitmap_scan_test(conn, testTitle, paramValueLow, paramValueHigh, par
 def run_one_bitmap_join_test(conn, testTitle, paramValueLow, paramValueHigh, parameterizeMethod, execute_n_times):
     plan_ids = [ BITMAP_SCAN, TABLE_SCAN ]
     force_methods = [ force_index_join, force_hash_join ]
-    explainDict, execDict, errors = find_crossover(conn, paramValueLow, paramValueHigh, parameterizeMethod, explain_bitmap_index, reset_index_join, plan_ids, force_methods, execute_n_times)
+    explainDict, execDict, errors = find_crossover(conn, paramValueLow, paramValueHigh, parameterizeMethod, explain_join_scan, reset_index_join, plan_ids, force_methods, execute_n_times)
     print_results(testTitle, explainDict, execDict, errors, plan_ids)
 
 
@@ -939,14 +994,14 @@ def run_bitmap_index_join_tests(conn, execute_n_times):
     run_one_bitmap_join_test(conn,
                              "Bitmap Join Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
                              0,
-                             400,
+                             900,
                              parameterize_bitmap_join_narrow,
                              execute_n_times)
     
     run_one_bitmap_join_test(conn,
                              "Bitmap Join Test, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
                              0,
-                             600,
+                             900,
                              parameterize_bitmap_join_wide,
                              execute_n_times)
     

@@ -1599,7 +1599,7 @@ CCostModelGPDB::CostBitmapSmallNDV
 	const DOUBLE rows = pci->Rows();
 	const DOUBLE width = pci->Width();
 
-	CDouble dSize = (rows * width) * 0.001;
+	CDouble dSize = rows * (1 + std::max(width * 0.005, 1.0)) * 0.05;
 
 	CDouble dBitmapIO = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapIOCostSmallNDV)->Get();
 	CDouble dInitRebind = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapScanRebindCost)->Get();
@@ -1642,7 +1642,7 @@ CCostModelGPDB::CostBitmapLargeNDV
 	const DOUBLE rows = pci->Rows();
 	const DOUBLE width = pci->Width();
 
-	CDouble dSize = (rows * width * dNDV) * 0.001;
+	CDouble dSize = rows * (1 + std::max(width * 0.005, 1.0)) * 0.05;
 	CDouble dBitmapIO = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapIOCostLargeNDV)->Get();
 	CDouble dInitRebind = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapScanRebindCost)->Get();
 	CDouble dBitmapPageCost = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapPageCostLargeNDV)->Get();
