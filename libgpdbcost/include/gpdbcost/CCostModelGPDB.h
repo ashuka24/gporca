@@ -187,13 +187,6 @@ namespace gpdbcost
 			static
 			CCost CostMotion(CMemoryPool *mp, CExpressionHandle &exprhdl, const CCostModelGPDB *pcmgpdb, const SCostingInfo *pci);
 
-			// cost of bitmap scan when the NDV is small
-			static
-			CCost CostBitmapSmallNDV(const CCostModelGPDB *pcmgpdb, const SCostingInfo *pci, CDouble dNDV);
-
-			// cost of bitmap scan when the NDV is large
-			static
-			CCost CostBitmapLargeNDV(const CCostModelGPDB *pcmgpdb, const SCostingInfo *pci, CDouble dNDV);
 
 		public:
 

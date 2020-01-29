@@ -1511,6 +1511,10 @@ CCostModelGPDB::CostBitmapTableScan
 	// how many colrefs are used for this table
 	pcrsLocalUsed->Exclude(outerRefs);
 
+	const DOUBLE rows = pci->Rows();
+	const DOUBLE width = pci->Width();
+	CDouble dInitRebind = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapScanRebindCost)->Get();
+
 	if (COperator::EopScalarBitmapIndexProbe != pexprIndexCond->Pop()->Eopid() || 1 < pcrsLocalUsed->Size())
 	{
 		// child is Bitmap AND/OR, or we use Multi column index
@@ -1520,7 +1524,6 @@ CCostModelGPDB::CostBitmapTableScan
 
 		// check whether the user specified overriding values in gucs
 		CDouble dInitScan = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpInitScanFactor)->Get();
-		CDouble dInitRebind = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapScanRebindCost)->Get();
 
 		GPOS_ASSERT(dInitScan >= 0 && dInitRebind >= 0);
 
@@ -1534,7 +1537,7 @@ CCostModelGPDB::CostBitmapTableScan
 		// number of index columns, but we're only accounting for the dominant cost
 
 		result = CCost(// cost for each byte returned by the index scan plus cost for incremental rebinds
-					   pci->NumRebinds() * (pci->Rows() * pci->Width() * dIndexFilterCostUnit + dInitRebind) +
+					   pci->NumRebinds() * (rows * width * dIndexFilterCostUnit + dInitRebind) +
 					   // init cost
 					   dInitScan);
 	}
@@ -1543,7 +1546,12 @@ CCostModelGPDB::CostBitmapTableScan
 		// if the expression is const table get, the pcrsUsed is empty
 		// so we use minimum value MinDistinct for dNDV in that case.
 		CDouble dNDV = CHistogram::MinDistinct;
-		if (1 == pcrsLocalUsed->Size())
+		if (rows < 1.0)
+		{
+			// if we aren't accessing a row every rebind, then don't charge a cost for those cases where we don't have a row
+			dNDV = rows;
+		}
+		else if (1 == pcrsLocalUsed->Size())
 		{
 			CColRef *pcrIndexCond =  pcrsLocalUsed->PcrFirst();
 			GPOS_ASSERT(NULL != pcrIndexCond);
@@ -1561,100 +1569,23 @@ CCostModelGPDB::CostBitmapTableScan
 			}
 		}
 
-		CDouble dNDVThreshold = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapNDVThreshold)->Get();
+		CDouble dSize = rows * (1 + std::max(width * 0.005, 1.0)) * 0.05;
+		CDouble dBitmapIO = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapIOCostSmallNDV)->Get();
+		CDouble dBitmapPageCost = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapPageCostSmallNDV)->Get();
 
-		if (dNDVThreshold <= dNDV)
-		{
-			result = CostBitmapLargeNDV(pcmgpdb, pci, dNDV);
-		}
-		else
-		{
-			result = CostBitmapSmallNDV(pcmgpdb, pci, dNDV);
-		}
+		result = CCost(// cost for each byte returned by the index scan plus cost for incremental rebinds
+					   pci->NumRebinds() * (dBitmapIO * dSize + dInitRebind) +
+					   // the BitmapPageCost * dNDV takes into account the idea of multiple tuples being on the same page.
+					   // If you have a small NDV, the likelihood of multiple tuples matching on one page is high and so the
+					   // page cost is reduced. Even though the page cost will decrease, the cost of accessing each tuple will
+					   // dominate. Likewise, if the NDV is large, the num of tuples matching per page is lower so the page
+					   // cost should be higher
+					   dBitmapPageCost * dNDV);
 	}
 
 	pcrsLocalUsed->Release();
 
 	return result;
-}
-
-
-
-//---------------------------------------------------------------------------
-//	@function:
-//		CCostModelGPDB::CostBitmapSmallNDV
-//
-//	@doc:
-//		Cost of scan
-//
-//---------------------------------------------------------------------------
-CCost
-CCostModelGPDB::CostBitmapSmallNDV
-	(
-	const CCostModelGPDB *pcmgpdb,
-	const SCostingInfo *pci,
-	CDouble dNDV
-	)
-{
-	const DOUBLE rows = pci->Rows();
-	const DOUBLE width = pci->Width();
-
-	CDouble dSize = rows * (1 + std::max(width * 0.005, 1.0)) * 0.05;
-
-	CDouble dBitmapIO = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapIOCostSmallNDV)->Get();
-	CDouble dInitRebind = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapScanRebindCost)->Get();
-	CDouble dBitmapPageCost = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapPageCostSmallNDV)->Get();
-	CDouble effectiveNDV = dNDV;
-
-	if (rows < 1.0)
-	{
-		// if we aren't accessing a row every rebind, then don't charge a cost for those cases where we don't have a row
-		effectiveNDV = rows;
-	}
-
-	// similar to multi-column/multi-pred bitmap scans, we want to return the cost of each byte returned by the index scan
-	// plus cost for incremental rebinds as well as the bitmap init cost
-
-	// the BitmapPageCost * effectiveNDV takes into account the idea of multiple tuples being on the same page. If the NDV
-	// is small, the likelihood of multiple tuples matching on one page is high and so the page cost is reduced. Even though
-	// the page cost will decrease, the cost of accessing each tuple will dominate. 
-	// Likewise, if the NDV is large, the number of tuples matching per page is lower and thus the page cost should be higher
-	return CCost(pci->NumRebinds() * (dBitmapIO * dSize + dInitRebind) + dBitmapPageCost * effectiveNDV);
-}
-
-
-//---------------------------------------------------------------------------
-//	@function:
-//		CCostModelGPDB::CostBitmapLargeNDV
-//
-//	@doc:
-//		Cost of when NDV is large
-//
-//---------------------------------------------------------------------------
-CCost
-CCostModelGPDB::CostBitmapLargeNDV
-	(
-	const CCostModelGPDB *pcmgpdb,
-	const SCostingInfo *pci,
-	CDouble dNDV
-	)
-{
-	const DOUBLE rows = pci->Rows();
-	const DOUBLE width = pci->Width();
-
-	CDouble dSize = rows * (1 + std::max(width * 0.005, 1.0)) * 0.05;
-	CDouble dBitmapIO = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapIOCostLargeNDV)->Get();
-	CDouble dInitRebind = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapScanRebindCost)->Get();
-	CDouble dBitmapPageCost = pcmgpdb->GetCostModelParams()->PcpLookup(CCostModelParamsGPDB::EcpBitmapPageCostLargeNDV)->Get();
-	CDouble effectiveNDV = dNDV;
-
-	if (rows < 1.0)
-	{
-		// if we aren't accessing a row every rebind, then don't charge a cost for those cases where we don't have a row
-		effectiveNDV = rows;
-	}
-
-	return CCost(pci->NumRebinds() * (dBitmapIO * dSize + dInitRebind) + dBitmapPageCost * effectiveNDV);
 }
 
 //---------------------------------------------------------------------------
