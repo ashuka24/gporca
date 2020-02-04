@@ -41,10 +41,16 @@ The results can be copied and pasted into a spreadsheet for further processing.
 """
 
 TABLE_NAME_PATTERN = r"cal_txtest"
+NDV_TABLE_NAME_PATTERN = r"cal_ndvtest"
+BFV_TABLE_NAME_PATTERN = r"bfv_tab2_facttable1"
 
 TABLE_SCAN = "table_scan"
 TABLE_SCAN_PATTERN = r"Seq Scan"
 TABLE_SCAN_PATTERN_V5 = r"Table Scan"
+
+DYNAMIC_TABLE_SCAN = "dynamic_table_scan"
+DYNAMIC_TABLE_SCAN_PATTERN = r"Dynamic Table Scan"
+DYNAMIC_TABLE_SCAN_PATTERN_V5 = r"Dynamic Table Scan"
 
 INDEX_SCAN = "index_scan"
 INDEX_SCAN_PATTERN = r">  Index Scan"
@@ -81,7 +87,7 @@ glob_gpdb_major_version=7
 # -----------------------------------------------------------------------------
 
 _drop_tables = """
-drop table if exists cal_txtest, cal_temp_ids, cal_dim
+drop table if exists cal_txtest, cal_temp_ids, cal_dim, bfv_tab2_facttable1, bfv_tab2_dimdate, bfv_tab2_dimtabl1, cal_ndvtest
 """
 
 # create the table. Parameters:
@@ -116,6 +122,25 @@ create table cal_dim(dim_id int,
 distributed by (dim_id)
 """ ]
 
+_create_bfv_tables = """
+CREATE TABLE bfv_tab2_facttable1 (col1 integer,
+                                  wk_id int,
+                                  id integer)
+%s;
+-- partition by range (wk_id) (start (1::smallint) 
+--                             END (20::smallint) inclusive 
+--                             every (1),
+--                             default partition dflt);
+
+CREATE TABLE bfv_tab2_dimdate (wk_id int, col2 date);
+CREATE TABLE bfv_tab2_dimtabl1 (id integer, col2 integer);
+""" 
+
+_create_ndv_table = """
+create table cal_ndvtest (id int, val int)
+%s
+distributed by (id);
+"""
 # insert into temp table. Parameters:
 # - integer start value (usually 0 or 1)
 # - integer stop value (suggested value is 10000000)
@@ -170,6 +195,22 @@ create index cal_txtest_i_bitmap_1000  on cal_txtest using bitmap(bitmap1000)
 """,
                    """
 create index cal_txtest_i_bitmap_10000 on cal_txtest using bitmap(bitmap10000)
+""",
+    ]
+
+_create_bfv_index_arr = [#"""
+#create index idx_bfv_tab2_facttable1_btree on bfv_tab2_facttable1 using btree(id)
+#""",
+                   """
+create index idx_bfv_tab2_facttable1_bitmap on bfv_tab2_facttable1 using bitmap(id)
+""",
+    ]
+
+_create_ndv_index_arr = [#"""
+#create index idx_bfv_tab2_facttable1_btree on bfv_tab2_facttable1 using btree(id)
+#""",
+                   """
+create index cal_ndvtest_bitmap on cal_ndvtest using bitmap(val)
 """,
     ]
 
@@ -444,7 +485,7 @@ def explain_index_scan(conn, sqlStr):
     
         for row in rows:
             log_output(row[0])
-            if re.search(TABLE_NAME_PATTERN, row[0]):
+            if re.search(TABLE_NAME_PATTERN, row[0]) or re.search(NDV_TABLE_NAME_PATTERN, row[0]):
                 if re.search(bitmap_scan_pattern, row[0]):
                     scan_type = BITMAP_SCAN
                     cost = cost_from_explain_line(row[0])
@@ -508,6 +549,57 @@ def explain_join_scan(conn, sqlStr):
     return (scan_type, cost)
 
 
+# Explain a query and find a join in an explain output
+# return the scan type and the corresponding cost.
+# Use this for scan-related tests.
+
+def explain_join_scan_part(conn, sqlStr):
+    cost = -1.0
+    scan_type = ""
+    try:
+        log_output("")
+        log_output("Executing query: %s" % ("explain " + sqlStr))
+        exp_curs = dbconn.execSQL(conn, "explain " + sqlStr)
+        rows = exp_curs.fetchall()
+        hash_join_pattern = HASH_JOIN_PATTERN
+        nl_join_pattern = NL_JOIN_PATTERN
+        table_scan_pattern = TABLE_SCAN_PATTERN
+        dynamic_table_scan_pattern = DYNAMIC_TABLE_SCAN_PATTERN
+        index_scan_pattern = INDEX_SCAN_PATTERN
+        bitmap_scan_pattern = BITMAP_SCAN_PATTERN
+        if (glob_gpdb_major_version) <= 5:
+            hash_join_pattern = HASH_JOIN_PATTERN_V5
+            nl_join_pattern = NL_JOIN_PATTERN_V5
+            table_scan_pattern = TABLE_SCAN_PATTERN_V5
+            dynamic_table_scan_pattern = DYNAMIC_TABLE_SCAN_PATTERN_V5
+            index_scan_pattern = INDEX_SCAN_PATTERN_V5
+            bitmap_scan_pattern = BITMAP_SCAN_PATTERN_V5
+
+        # save the cost of the join above the scan type
+        for row in rows:
+            log_output(row[0])
+            if re.search(nl_join_pattern, row[0]):
+                cost = cost_from_explain_line(row[0])
+            elif re.search(hash_join_pattern, row[0]):
+                cost = cost_from_explain_line(row[0])
+            # mark the scan type used underneath the join
+            if re.search(BFV_TABLE_NAME_PATTERN, row[0]):
+                if re.search(bitmap_scan_pattern, row[0]):
+                    scan_type = BITMAP_SCAN
+                elif re.search(index_scan_pattern, row[0]):
+                    scan_type = INDEX_SCAN
+                elif re.search(dynamic_table_scan_pattern, row[0]):
+                    scan_type = DYNAMIC_TABLE_SCAN
+                elif re.search(table_scan_pattern, row[0]):
+                    scan_type = TABLE_SCAN
+
+
+    except Exception as e:
+        log_output("\n*** ERROR explaining query:\n%s;\nReason: %s" % ("explain " + sqlStr, e))
+
+    return (scan_type, cost)
+
+
 # extract the cost c from the cost=x..c in an explain line
 
 def cost_from_explain_line(line):
@@ -521,11 +613,12 @@ def cost_from_explain_line(line):
 
 # iterate over one parameterized query, using a range of parameter values, explaining and (optionally) executing the query
 
-def find_crossover(conn, lowParamValue, highParamLimit, parameterizeMethod, explain_method, reset_method, plan_ids, force_methods, execute_n_times):
+def find_crossover(conn, lowParamValue, highParamLimit, setup, parameterizeMethod, explain_method, reset_method, plan_ids, force_methods, execute_n_times):
     # expects the following:
     # - conn:               A connection
     # - lowParamValue:      The lowest (integer) value to try for the parameter
     # - highParamLimit:     The highest (integer) value to try for the parameter + 1
+    # - setup:              A method that runs any sql needed for setup before a particular select run, given a parameterized query and a paramter value
     # - parameterizeMethod: A method to generate the actual query text, given a parameterized query and a parameter value
     # - explain_method:     A method that takes a connection and an SQL string and returns a tuple (plan, cost)
     # - reset_method:       A method to reset all gucs and similar switches, to get the default plan by the optimizer
@@ -570,6 +663,9 @@ def find_crossover(conn, lowParamValue, highParamLimit, parameterizeMethod, expl
     # first part, run through the parameter values and determine the plan and cost chosen by the optimizer
     for paramValue in range(lowParamValue, highParamLimit, incParamValue):
         
+        # do any setup required
+        setupString = setup(paramValue)
+        execute_sql(conn, setupString)
         # explain the query and record which plan it chooses and what the cost is
         sqlString = parameterizeMethod(paramValue)
         (plan, cost) = explain_method(conn, sqlString)
@@ -597,6 +693,10 @@ def find_crossover(conn, lowParamValue, highParamLimit, parameterizeMethod, expl
         log_output("----------- Now forcing a %s plan --------------" % plan_id)
         force_methods[plan_num](conn)
         for paramValue in range(lowParamValue, highParamLimit, incParamValue):
+            # do any setup required
+            setupString = setup(paramValue)
+            execute_sql(conn, setupString)
+      			# explain the query with the forced plan
             sqlString = parameterizeMethod(paramValue)
             (plan, cost) = explain_method(conn, sqlString)
             if plan_id != plan:
@@ -800,6 +900,10 @@ _force_sequential_scan = [ """
 select disable_xform('CXformImplementBitmapTableGet')
 """ ]
 
+_disable_dynamic_table_scan = [ """
+set optimizer_enable_dynamictablescan to off
+""" ]
+
 _force_index_scan = [ """
 select disable_xform('CXformGet2TableScan')
 """ ]
@@ -864,6 +968,37 @@ from cal_txtest f join cal_dim d on f.bitmap10000 = d.dim_id
 where d.dim_id2 between 0 and %d
 """
 
+_insert_into_bfv_tables = """
+truncate bfv_tab2_facttable1;
+truncate bfv_tab2_dimdate;
+truncate bfv_tab2_dimtabl1; 
+insert into bfv_tab2_facttable1 select col1, col1, col1 from (select generate_series(1,%d) col1)a;
+insert into bfv_tab2_dimdate select col1, current_date - col1 from (select generate_series(1,%d,2) col1)a;
+insert into bfv_tab2_dimtabl1 select col1, col1 from (select generate_series(1,%d,3) col1)a;
+analyze bfv_tab2_facttable1;
+analyze bfv_tab2_dimdate;
+analyze bfv_tab2_dimtabl1; 
+"""
+
+_insert_into_ndv_tables= """
+truncate cal_ndvtest;
+insert into cal_ndvtest select i, i %% %d from (select generate_series(1,10000) i)a;
+analyze cal_ndvtest; 
+"""
+
+_bfv_join = """
+SELECT count(*) 
+FROM bfv_tab2_facttable1 ft, bfv_tab2_dimtabl1 dt1
+WHERE ft.id = dt1.id;
+"""
+
+_bitmap_index_ndv = """
+select count(*)
+from cal_ndvtest
+where val <= 10000
+"""
+
+
 # Parameterize methods for the test queries above
 # -----------------------------------------------------------------------------
 
@@ -895,6 +1030,21 @@ def parameterize_bitmap_join_narrow(paramValue):
 def parameterize_bitmap_join_wide(paramValue):
     return _bitmap_index_join % (", max(f.txt)", paramValue)
 
+def parameterize_insert_join_bfv(paramValue):
+    return _insert_into_bfv_tables % (paramValue, paramValue, paramValue)
+
+def parameterize_insert_ndv(paramValue):
+    return _insert_into_ndv_tables % (paramValue)
+
+def parameterize_bitmap_join_bfv(paramValue):
+    return _bfv_join
+
+def parameterize_bitmap_index_ndv(paramValue):
+    return _bitmap_index_ndv
+
+def noSetupRequired(paramValue):
+    return "select 1;"
+
 def explain_bitmap_index(conn, sqlStr):
     return explain_index_scan(conn, sqlStr)
 
@@ -916,20 +1066,34 @@ def force_hash_join(conn):
 def force_index_join(conn):
     execute_sql_arr(conn, _force_index_nlj)
 
+def disable_dynamic_table_scan(conn):
+    execute_sql_arr(conn, _disable_dynamic_table_scan)
+
+def disable_index_join(conn):
+    execute_sql_arr(conn, ["set optimizer_enable_indexjoin = off", "select enable_xform('CXformPushGbBelowJoin')"])
+
 
 # Helper methods for running tests
 # -----------------------------------------------------------------------------
 
-def run_one_bitmap_scan_test(conn, testTitle, paramValueLow, paramValueHigh, parameterizeMethod, execute_n_times):
+def run_one_bitmap_scan_test(conn, testTitle, paramValueLow, paramValueHigh, setup, parameterizeMethod, execute_n_times):
     plan_ids = [ BITMAP_SCAN, TABLE_SCAN ]
     force_methods = [ force_bitmap_scan, force_table_scan ]
-    explainDict, execDict, errors = find_crossover(conn, paramValueLow, paramValueHigh, parameterizeMethod, explain_bitmap_index, reset_index_test, plan_ids, force_methods, execute_n_times)
+    explainDict, execDict, errors = find_crossover(conn, paramValueLow, paramValueHigh, setup, parameterizeMethod, explain_bitmap_index, reset_index_test, plan_ids, force_methods, execute_n_times)
     print_results(testTitle, explainDict, execDict, errors, plan_ids)
 
-def run_one_bitmap_join_test(conn, testTitle, paramValueLow, paramValueHigh, parameterizeMethod, execute_n_times):
+def run_one_bitmap_join_test(conn, testTitle, paramValueLow, paramValueHigh, setup, parameterizeMethod, execute_n_times):
     plan_ids = [ BITMAP_SCAN, TABLE_SCAN ]
     force_methods = [ force_index_join, force_hash_join ]
-    explainDict, execDict, errors = find_crossover(conn, paramValueLow, paramValueHigh, parameterizeMethod, explain_join_scan, reset_index_join, plan_ids, force_methods, execute_n_times)
+    explainDict, execDict, errors = find_crossover(conn, paramValueLow, paramValueHigh, setup, parameterizeMethod, explain_join_scan, reset_index_join, plan_ids, force_methods, execute_n_times)
+    print_results(testTitle, explainDict, execDict, errors, plan_ids)
+
+
+def run_one_bfv_join_test(conn, testTitle, paramValueLow, paramValueHigh, setup, parameterizeMethod, execute_n_times):
+    plan_ids = [ BITMAP_SCAN, TABLE_SCAN ]
+    # force_methods = [ disable_dynamic_table_scan, disable_index_join ]
+    force_methods = [ force_index_join, force_hash_join ]
+    explainDict, execDict, errors = find_crossover(conn, paramValueLow, paramValueHigh, setup, parameterizeMethod, explain_join_scan_part, reset_index_join, plan_ids, force_methods, execute_n_times)
     print_results(testTitle, explainDict, execDict, errors, plan_ids)
 
 
@@ -938,56 +1102,70 @@ def run_one_bitmap_join_test(conn, testTitle, paramValueLow, paramValueHigh, par
 
 def run_bitmap_index_scan_tests(conn, execute_n_times):
 
-    run_one_bitmap_scan_test(conn,
-                             "Bitmap Scan Test, NDV=10, selectivity_pct=10*parameter_value, count(*)",
-                             0,
-                             10,
-                             parameterize_bitmap_index_10_narrow,
-                             execute_n_times)
+    # run_one_bitmap_scan_test(conn,
+    #                          "Bitmap Scan Test, NDV=10, selectivity_pct=10*parameter_value, count(*)",
+    #                          0,
+    #                          10,
+    #                          noSetupRequired,
+    #                          parameterize_bitmap_index_10_narrow,
+    #                          execute_n_times)
 
-    # all full table scan, no crossover
-    run_one_bitmap_scan_test(conn,
-                             "Bitmap Scan Test, NDV=10, selectivity_pct=10*parameter_value, max(txt)",
-                             0,
-                             3,
-                             parameterize_bitmap_index_10_wide,
-                             execute_n_times)
+    # # all full table scan, no crossover
+    # run_one_bitmap_scan_test(conn,
+    #                          "Bitmap Scan Test, NDV=10, selectivity_pct=10*parameter_value, max(txt)",
+    #                          0,
+    #                          3,
+    #                          noSetupRequired,
+    #                          parameterize_bitmap_index_10_wide,
+    #                          execute_n_times)
+
+    # run_one_bitmap_scan_test(conn,
+    #                          "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
+    #                          0,
+    #                          20,
+    #                          noSetupRequired,
+    #                          parameterize_bitmap_index_10000_narrow,
+    #                          execute_n_times)
+
+    # run_one_bitmap_scan_test(conn,
+    #                          "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*), largeNDV test",
+    #                          0,
+    #                          300,
+    #                          noSetupRequired,
+    #                          parameterize_bitmap_index_10000_narrow,
+    #                          execute_n_times)
+
+    # run_one_bitmap_scan_test(conn,
+    #                          "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
+    #                          5,
+    #                          25,
+    #                          noSetupRequired,
+    #                          parameterize_bitmap_index_10000_wide,
+    #                          execute_n_times)
+
+    # run_one_bitmap_scan_test(conn,
+    #                          "Bitmap Scan Test, multi-range, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
+    #                          0,
+    #                          100,
+    #                          noSetupRequired,
+    #                          parameterize_bitmap_index_10000_multi_narrow,
+    #                          execute_n_times)
+
+    # run_one_bitmap_scan_test(conn,
+    #                          "Bitmap Scan Test, multi-range, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
+    #                          0,
+    #                          60,
+    #                          noSetupRequired,
+    #                          parameterize_bitmap_index_10000_multi_wide,
+    #                          execute_n_times)
 
     run_one_bitmap_scan_test(conn,
-                             "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
-                             0,
-                             20,
-                             parameterize_bitmap_index_10000_narrow,
+                             "Bitmap Scan Test, ndv test, rows=10000, , count(*)",
+                             1, # select modular ex. would replace x in the following: select i % x from generate_series(1,10000)i;
+                             10000, #max here is 10000 (num of rows)
+                             parameterize_insert_ndv,
+                             parameterize_bitmap_index_ndv,
                              execute_n_times)
-
-    run_one_bitmap_scan_test(conn,
-                             "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*), largeNDV test",
-                             0,
-                             300,
-                             parameterize_bitmap_index_10000_narrow,
-                             execute_n_times)
-
-    run_one_bitmap_scan_test(conn,
-                             "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
-                             5,
-                             25,
-                             parameterize_bitmap_index_10000_wide,
-                             execute_n_times)
-
-    run_one_bitmap_scan_test(conn,
-                             "Bitmap Scan Test, multi-range, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
-                             0,
-                             100,
-                             parameterize_bitmap_index_10000_multi_narrow,
-                             execute_n_times)
-
-    run_one_bitmap_scan_test(conn,
-                             "Bitmap Scan Test, multi-range, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
-                             0,
-                             60,
-                             parameterize_bitmap_index_10000_multi_wide,
-                             execute_n_times)
-
 
 def run_bitmap_index_join_tests(conn, execute_n_times):
 
@@ -995,6 +1173,7 @@ def run_bitmap_index_join_tests(conn, execute_n_times):
                              "Bitmap Join Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
                              0,
                              900,
+                             noSetupRequired,
                              parameterize_bitmap_join_narrow,
                              execute_n_times)
     
@@ -1002,8 +1181,25 @@ def run_bitmap_index_join_tests(conn, execute_n_times):
                              "Bitmap Join Test, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
                              0,
                              900,
+                             noSetupRequired,
                              parameterize_bitmap_join_wide,
                              execute_n_times)
+
+    run_one_bfv_join_test(conn, 
+                           "Bitmap Join BFV Test, ",
+                           100, # num of rows inserted
+                           20000,
+                           parameterize_insert_join_bfv,
+                           parameterize_bitmap_join_bfv,
+                           execute_n_times)
+
+    run_one_bfv_join_test(conn, 
+                           "Bitmap Join BFV Test, Large Data",
+                           10000, # num of rows inserted
+                           900000,
+                           parameterize_insert_join_bfv,
+                           parameterize_bitmap_join_bfv,
+                           execute_n_times)
     
 
 # common parts of all test suites, create tables, run tests, drop objects
@@ -1015,17 +1211,23 @@ def createDB(conn, use_ao, num_rows):
     if use_ao:
         create_options = _with_appendonly
     create_cal_table_stmt = _create_cal_table % create_options
+    create_bfv_tables = _create_bfv_tables % create_options
+    create_ndv_table = _create_ndv_table % create_options
     insert_into_temp_stmt = _insert_into_temp % (1,num_rows)
     insert_into_other_stmt = _insert_into_other_tables % (1,10000)
         
     execute_sql(conn, _drop_tables)
     execute_sql(conn, create_cal_table_stmt)
+    execute_sql(conn, create_bfv_tables)
+    execute_sql(conn, create_ndv_table)
     execute_sql_arr(conn, _create_other_tables)
     commit_db(conn)
     execute_and_commit_sql(conn, insert_into_temp_stmt)
     execute_and_commit_sql(conn, _insert_into_table)
     execute_and_commit_sql(conn, insert_into_other_stmt)
     execute_sql_arr(conn, _create_index_arr)
+    execute_sql_arr(conn, _create_bfv_index_arr)
+    execute_sql_arr(conn, _create_ndv_index_arr)
     execute_sql(conn, _analyze_table)
     commit_db(conn)
 
