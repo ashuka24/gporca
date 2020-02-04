@@ -1580,7 +1580,7 @@ CCostModelGPDB::CostBitmapTableScan
 					   // page cost is reduced. Even though the page cost will decrease, the cost of accessing each tuple will
 					   // dominate. Likewise, if the NDV is large, the num of tuples matching per page is lower so the page
 					   // cost should be higher
-					   dBitmapPageCost * dNDV);
+					   dBitmapPageCost * dNDV * 0.1);
 	}
 
 	pcrsLocalUsed->Release();
