@@ -79,7 +79,7 @@ glob_verbose=False
 # only consider optimizer errors beyond x * sigma (standard deviation) as significant
 glob_sigma_diff=3
 glob_log_file=None
-glob_exe_timeout=40000
+glob_exe_timeout=100000
 glob_gpdb_major_version=7
 
 
@@ -982,7 +982,7 @@ analyze bfv_tab2_dimtabl1;
 
 _insert_into_ndv_tables= """
 truncate cal_ndvtest;
-insert into cal_ndvtest select i, i %% %d from (select generate_series(1,10000) i)a;
+insert into cal_ndvtest select i, i %% %d from (select generate_series(1,1000000) i)a;
 analyze cal_ndvtest; 
 """
 
@@ -995,7 +995,7 @@ WHERE ft.id = dt1.id;
 _bitmap_index_ndv = """
 select count(*)
 from cal_ndvtest
-where val <= 10000
+where val <= 1000000
 """
 
 
@@ -1102,65 +1102,65 @@ def run_one_bfv_join_test(conn, testTitle, paramValueLow, paramValueHigh, setup,
 
 def run_bitmap_index_scan_tests(conn, execute_n_times):
 
-    # run_one_bitmap_scan_test(conn,
-    #                          "Bitmap Scan Test, NDV=10, selectivity_pct=10*parameter_value, count(*)",
-    #                          0,
-    #                          10,
-    #                          noSetupRequired,
-    #                          parameterize_bitmap_index_10_narrow,
-    #                          execute_n_times)
+    run_one_bitmap_scan_test(conn,
+                             "Bitmap Scan Test, NDV=10, selectivity_pct=10*parameter_value, count(*)",
+                             0,
+                             10,
+                             noSetupRequired,
+                             parameterize_bitmap_index_10_narrow,
+                             execute_n_times)
 
-    # # all full table scan, no crossover
-    # run_one_bitmap_scan_test(conn,
-    #                          "Bitmap Scan Test, NDV=10, selectivity_pct=10*parameter_value, max(txt)",
-    #                          0,
-    #                          3,
-    #                          noSetupRequired,
-    #                          parameterize_bitmap_index_10_wide,
-    #                          execute_n_times)
-
-    # run_one_bitmap_scan_test(conn,
-    #                          "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
-    #                          0,
-    #                          20,
-    #                          noSetupRequired,
-    #                          parameterize_bitmap_index_10000_narrow,
-    #                          execute_n_times)
-
-    # run_one_bitmap_scan_test(conn,
-    #                          "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*), largeNDV test",
-    #                          0,
-    #                          300,
-    #                          noSetupRequired,
-    #                          parameterize_bitmap_index_10000_narrow,
-    #                          execute_n_times)
-
-    # run_one_bitmap_scan_test(conn,
-    #                          "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
-    #                          5,
-    #                          25,
-    #                          noSetupRequired,
-    #                          parameterize_bitmap_index_10000_wide,
-    #                          execute_n_times)
-
-    # run_one_bitmap_scan_test(conn,
-    #                          "Bitmap Scan Test, multi-range, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
-    #                          0,
-    #                          100,
-    #                          noSetupRequired,
-    #                          parameterize_bitmap_index_10000_multi_narrow,
-    #                          execute_n_times)
-
-    # run_one_bitmap_scan_test(conn,
-    #                          "Bitmap Scan Test, multi-range, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
-    #                          0,
-    #                          60,
-    #                          noSetupRequired,
-    #                          parameterize_bitmap_index_10000_multi_wide,
-    #                          execute_n_times)
+    # all full table scan, no crossover
+    run_one_bitmap_scan_test(conn,
+                             "Bitmap Scan Test, NDV=10, selectivity_pct=10*parameter_value, max(txt)",
+                             0,
+                             3,
+                             noSetupRequired,
+                             parameterize_bitmap_index_10_wide,
+                             execute_n_times)
 
     run_one_bitmap_scan_test(conn,
-                             "Bitmap Scan Test, ndv test, rows=10000, , count(*)",
+                             "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
+                             0,
+                             20,
+                             noSetupRequired,
+                             parameterize_bitmap_index_10000_narrow,
+                             execute_n_times)
+
+    run_one_bitmap_scan_test(conn,
+                             "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, count(*), largeNDV test",
+                             0,
+                             300,
+                             noSetupRequired,
+                             parameterize_bitmap_index_10000_narrow,
+                             execute_n_times)
+
+    run_one_bitmap_scan_test(conn,
+                             "Bitmap Scan Test, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
+                             5,
+                             25,
+                             noSetupRequired,
+                             parameterize_bitmap_index_10000_wide,
+                             execute_n_times)
+
+    run_one_bitmap_scan_test(conn,
+                             "Bitmap Scan Test, multi-range, NDV=10000, selectivity_pct=0.01*parameter_value, count(*)",
+                             0,
+                             100,
+                             noSetupRequired,
+                             parameterize_bitmap_index_10000_multi_narrow,
+                             execute_n_times)
+
+    run_one_bitmap_scan_test(conn,
+                             "Bitmap Scan Test, multi-range, NDV=10000, selectivity_pct=0.01*parameter_value, max(txt)",
+                             0,
+                             60,
+                             noSetupRequired,
+                             parameterize_bitmap_index_10000_multi_wide,
+                             execute_n_times)
+
+    run_one_bitmap_scan_test(conn,
+                             "Bitmap Scan Test, ndv test, rows=1000000, , count(*)",
                              1, # select modular ex. would replace x in the following: select i % x from generate_series(1,10000)i;
                              10000, #max here is 10000 (num of rows)
                              parameterize_insert_ndv,
