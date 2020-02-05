@@ -198,17 +198,17 @@ create index cal_txtest_i_bitmap_10000 on cal_txtest using bitmap(bitmap10000)
 """,
     ]
 
-_create_bfv_index_arr = [#"""
-#create index idx_bfv_tab2_facttable1_btree on bfv_tab2_facttable1 using btree(id)
-#""",
+_create_bfv_index_arr = ["""
+create index idx_bfv_tab2_facttable1_btree on bfv_tab2_facttable1 using btree(id)
+""",
                    """
 create index idx_bfv_tab2_facttable1_bitmap on bfv_tab2_facttable1 using bitmap(id)
 """,
     ]
 
-_create_ndv_index_arr = [#"""
-#create index idx_bfv_tab2_facttable1_btree on bfv_tab2_facttable1 using btree(id)
-#""",
+_create_ndv_index_arr = ["""
+create index cal_ndvtest_btree on cal_ndvtest using btree(val)
+""",
                    """
 create index cal_ndvtest_bitmap on cal_ndvtest using bitmap(val)
 """,
