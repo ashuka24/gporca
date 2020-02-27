@@ -819,7 +819,7 @@ CPhysicalJoin::PexprJoinPredOnPartKeys
 										mp,
 										pexprScalar,
 										pdrgpdrgpcrPartKeys,
-										pcrsAllowedRefs,
+										pcrsAllowedRefs, // this is never NOT null when we hit this case so we always do DPE?
 										true // fUseConstraints
 										);
 	}
@@ -1111,7 +1111,7 @@ CPhysicalJoin::PppsRequiredCompute
 			continue;
 		}
 
-		BOOL fOuterPartConsumer = ppartinfo->FContainsScanId(part_idx_id);
+		BOOL fOuterPartConsumer = ppartinfo->FContainsScanId(part_idx_id); // DTS is on the outer
 
 		// in order to find interesting join predicates that can be used for DPE,
 		// one side of the predicate must be the partition key, while the other side must only contain
@@ -1124,7 +1124,7 @@ CPhysicalJoin::PppsRequiredCompute
 
 		if(fNLJoin)
 		{
-			if (0 == child_index && fOuterPartConsumer)
+			if (0 == child_index && fOuterPartConsumer) // SPE
 			{
 				// always push through required partition propagation for consumers on the
 				// outer side of the nested loop join
@@ -1134,16 +1134,16 @@ CPhysicalJoin::PppsRequiredCompute
 
 				ppimResult->AddRequiredPartPropagation(ppim, part_idx_id, CPartIndexMap::EppraPreservePropagators, pdrgppartkeys);
 			}
-			else
+			else // DPE
 			{
 				// check if there is an interesting condition involving the partition key
 				CExpression *pexprScalar = exprhdl.PexprScalarChild(2 /*child_index*/);
 				AddFilterOnPartKey(mp, true /*fNLJoin*/, pexprScalar, ppim, ppfm, child_index, part_idx_id, fOuterPartConsumer, ppimResult, ppfmResult, pcrsAllowedRefs);
 			}
 		}
-		else
+		else // hash join
 		{
-			if (1 == child_index && !fOuterPartConsumer)
+			if (1 == child_index && !fOuterPartConsumer) // inner child + DTS on inner ==> SPE
 			{
 				// always push through required partition propagation for consumers on the
 				// inner side of the hash join
@@ -1153,7 +1153,7 @@ CPhysicalJoin::PppsRequiredCompute
 
 				ppimResult->AddRequiredPartPropagation(ppim, part_idx_id, CPartIndexMap::EppraPreservePropagators, pdrgppartkeys);
 			}
-			else
+			else // DPE
 			{
 				// look for a filter on the part key
 				CExpression *pexprScalar = exprhdl.PexprScalarChild(2 /*child_index*/);

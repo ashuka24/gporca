@@ -1434,47 +1434,78 @@ CPredicateUtils::PexprPartPruningPredicate
 	const ULONG size = pdrgpexpr->Size();
 
 	CExpressionArray *pdrgpexprResult = GPOS_NEW(mp) CExpressionArray(mp);
-	
-	for (ULONG ul = 0; ul < size; ul++)
+
+	if (pcrsAllowedRefs != NULL) // DPE case
 	{
-		CExpression *pexpr = (*pdrgpexpr)[ul];
-
-		if (FBoolPredicateOnColumn(pexpr, pcrPartKey) ||
-			FNullCheckOnColumn(pexpr, pcrPartKey) ||
-			FDisjunctionOnColumn(mp, pexpr, pcrPartKey, pcrsAllowedRefs))
+		for (ULONG ul = 0; ul < size; ul++)
 		{
-			pexpr->AddRef();
-			pdrgpexprResult->Append(pexpr);
-			continue;
-		}
+			CExpression *pexpr = (*pdrgpexpr)[ul];
 
-		if (FComparison(pexpr, pcrPartKey, pcrsAllowedRefs))
-		{
-			CScalarCmp *popCmp = CScalarCmp::PopConvert(pexpr->Pop());
-
-			if (!pexpr->DeriveScalarFunctionProperties()->NeedsSingletonExecution() && FRangeComparison(popCmp->ParseCmpType()))
+			if (FBoolPredicateOnColumn(pexpr, pcrPartKey)) // we dont care about not null check here
 			{
 				pexpr->AddRef();
 				pdrgpexprResult->Append(pexpr);
+				continue;
 			}
-			
-			continue;
+
+			if (FComparison(pexpr, pcrPartKey, pcrsAllowedRefs))
+			{
+				CScalarCmp *popCmp = CScalarCmp::PopConvert(pexpr->Pop());
+
+				if (!pexpr->DeriveScalarFunctionProperties()->NeedsSingletonExecution() && FRangeComparison(popCmp->ParseCmpType()))//&& popCmp->ParseCmpType() == IMDType::EcmptEq)
+				{
+					pexpr->AddRef();
+					pdrgpexprResult->Append(pexpr);
+				}
+
+				continue;
+			}
 		}
-		
+		// this should always be null for DPE
+		pexprCol = NULL;
 	}
-
-	// Remove an "IS NOT NULL" partition filter if it is redundant e.g. "a = b AND a is NOT NULL"
-	// For that pcrPartKey must be referenced in pdrgpexprResult because then an "IS NOT NULL" filter
-	// is implicit.
-
-	if (pexprCol != NULL && CPredicateUtils::FNotNullCheckOnColumn(pexprCol, pcrPartKey))
+	else // SPE case
 	{
-		CColRefSet *pcrsUsed = CUtils::PcrsExtractColumns(mp, pdrgpexprResult);
-		if (pcrsUsed->FMember(pcrPartKey))
+		for (ULONG ul = 0; ul < size; ul++)
 		{
-			pexprCol = NULL;
+			CExpression *pexpr = (*pdrgpexpr)[ul];
+
+			if (FBoolPredicateOnColumn(pexpr, pcrPartKey) ||
+				FNullCheckOnColumn(pexpr, pcrPartKey) ||
+				FDisjunctionOnColumn(mp, pexpr, pcrPartKey, pcrsAllowedRefs))
+			{
+				pexpr->AddRef();
+				pdrgpexprResult->Append(pexpr);
+				continue;
+			}
+
+			if (FComparison(pexpr, pcrPartKey, pcrsAllowedRefs))
+			{
+				CScalarCmp *popCmp = CScalarCmp::PopConvert(pexpr->Pop());
+
+				if (!pexpr->DeriveScalarFunctionProperties()->NeedsSingletonExecution() && FRangeComparison(popCmp->ParseCmpType()))
+				{
+					pexpr->AddRef();
+					pdrgpexprResult->Append(pexpr);
+				}
+
+				continue;
+			}
 		}
-		pcrsUsed->Release();
+
+		// Remove an "IS NOT NULL" partition filter if it is redundant e.g. "a = b AND a is NOT NULL"
+		// For that pcrPartKey must be referenced in pdrgpexprResult because then an "IS NOT NULL" filter
+		// is implicit.
+
+		if (pexprCol != NULL && CPredicateUtils::FNotNullCheckOnColumn(pexprCol, pcrPartKey))
+		{
+			CColRefSet *pcrsUsed = CUtils::PcrsExtractColumns(mp, pdrgpexprResult);
+			if (pcrsUsed->FMember(pcrPartKey))
+			{
+				pexprCol = NULL;
+			}
+			pcrsUsed->Release();
+		}
 	}
 
 	CExpressionArray *pdrgpexprResultNew = PdrgpexprAppendConjunctsDedup(mp, pdrgpexprResult, pexprCol);
