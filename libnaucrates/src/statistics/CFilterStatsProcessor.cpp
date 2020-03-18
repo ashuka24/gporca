@@ -347,7 +347,7 @@ CFilterStatsProcessor::MakeHistHashMapConjFilter
 	(
 	CMemoryPool *mp,
 	const CStatisticsConfig *stats_config,
-												 UlongToHistogramMap *input_histograms,
+	UlongToHistogramMap *input_histograms,
 	CDouble input_rows,
 	CStatsPredConj *conjunctive_pred_stats,
 	CDouble *scale_factor
@@ -517,7 +517,7 @@ CFilterStatsProcessor::MakeHistHashMapDisjFilter
 
 	CHistogram *previous_histogram = NULL;
 	ULONG previous_colid = gpos::ulong_max;
-	CDouble previous_scale_factor(input_rows);
+	CDouble previous_scale_factor(1.0);
 
 	CDouble cumulative_rows(CStatistics::MinRows.Get());
 
