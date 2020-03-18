@@ -988,7 +988,7 @@ OR
     <dxl:Plan Id="0" SpaceSize="246228">
       <dxl:Result>
         <dxl:Properties>
-          <dxl:Cost StartupCost="0" TotalCost="14963.550781" Rows="521.833333" Width="246"/>
+          <dxl:Cost StartupCost="0" TotalCost="15193.294922" Rows="1000.000000" Width="246"/>
         </dxl:Properties>
         <dxl:ProjList>
           <dxl:ProjElem ColId="0" Alias="rolname">
@@ -1121,7 +1121,7 @@ OR
                   <dxl:Ident ColId="128" ColName="ColRef_0128" TypeMdid="0.20.1.0"/>
                   <dxl:Ident ColId="126" ColName="ColRef_0126" TypeMdid="0.20.1.0"/>
                 </dxl:Comparison>
-                <dxl:ConstValue TypeMdid="0.16.1.0" IsNull="true" IsByValue="true"/>
+                <dxl:ConstValue TypeMdid="0.16.1.0" IsNull="true"/>
                 <dxl:ConstValue TypeMdid="0.16.1.0" Value="true"/>
               </dxl:If>
               <dxl:ConstValue TypeMdid="0.16.1.0" Value="false"/>
@@ -1136,7 +1136,7 @@ OR
                   <dxl:Ident ColId="132" ColName="ColRef_0132" TypeMdid="0.20.1.0"/>
                   <dxl:Ident ColId="130" ColName="ColRef_0130" TypeMdid="0.20.1.0"/>
                 </dxl:Comparison>
-                <dxl:ConstValue TypeMdid="0.16.1.0" IsNull="true" IsByValue="true"/>
+                <dxl:ConstValue TypeMdid="0.16.1.0" IsNull="true"/>
                 <dxl:ConstValue TypeMdid="0.16.1.0" Value="true"/>
               </dxl:If>
               <dxl:ConstValue TypeMdid="0.16.1.0" Value="false"/>

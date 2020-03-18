@@ -582,7 +582,7 @@ explain select * from test_stat where c <> 'J' or c is null;
     <dxl:Plan Id="0" SpaceSize="1">
       <dxl:GatherMotion InputSegments="0,1,2" OutputSegments="-1">
         <dxl:Properties>
-          <dxl:Cost StartupCost="0" TotalCost="529.355397" Rows="996326.040640" Width="14"/>
+          <dxl:Cost StartupCost="0" TotalCost="590.515063" Rows="2001360.000000" Width="14"/>
         </dxl:Properties>
         <dxl:ProjList>
           <dxl:ProjElem ColId="0" Alias="a">
@@ -599,7 +599,7 @@ explain select * from test_stat where c <> 'J' or c is null;
         <dxl:SortingColumnList/>
         <dxl:TableScan>
           <dxl:Properties>
-            <dxl:Cost StartupCost="0" TotalCost="477.373746" Rows="996326.040640" Width="14"/>
+            <dxl:Cost StartupCost="0" TotalCost="486.097441" Rows="2001360.000000" Width="14"/>
           </dxl:Properties>
           <dxl:ProjList>
             <dxl:ProjElem ColId="0" Alias="a">

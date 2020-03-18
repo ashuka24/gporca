@@ -14560,7 +14560,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
     <dxl:Plan Id="0" SpaceSize="7792">
       <dxl:GatherMotion InputSegments="0,1" OutputSegments="-1">
         <dxl:Properties>
-          <dxl:Cost StartupCost="0" TotalCost="1858510.030318" Rows="20169.272000" Width="76"/>
+          <dxl:Cost StartupCost="0" TotalCost="2187917.842826" Rows="2880896.000079" Width="76"/>
         </dxl:Properties>
         <dxl:ProjList>
           <dxl:ProjElem ColId="1" Alias="customer_id">
@@ -14598,7 +14598,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
         <dxl:SortingColumnList/>
         <dxl:Result>
           <dxl:Properties>
-            <dxl:Cost StartupCost="0" TotalCost="1857760.561240" Rows="20169.272000" Width="76"/>
+            <dxl:Cost StartupCost="0" TotalCost="2081008.592823" Rows="2880896.000079" Width="76"/>
           </dxl:Properties>
           <dxl:ProjList>
             <dxl:ProjElem ColId="1" Alias="c_customer_id">
@@ -14691,7 +14691,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
           <dxl:OneTimeFilter/>
           <dxl:Result>
             <dxl:Properties>
-              <dxl:Cost StartupCost="0" TotalCost="1856262.623084" Rows="2880896.000000" Width="80"/>
+              <dxl:Cost StartupCost="0" TotalCost="1867191.092817" Rows="2880896.000079" Width="80"/>
             </dxl:Properties>
             <dxl:ProjList>
               <dxl:ProjElem ColId="91" Alias="sale_type">
@@ -14732,7 +14732,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
             <dxl:OneTimeFilter/>
             <dxl:Aggregate AggregationStrategy="Hashed" StreamSafe="false">
               <dxl:Properties>
-                <dxl:Cost StartupCost="0" TotalCost="1631191.623084" Rows="2880896.000000" Width="147"/>
+                <dxl:Cost StartupCost="0" TotalCost="1642120.092811" Rows="2880896.000079" Width="147"/>
               </dxl:Properties>
               <dxl:GroupingColumns>
                 <dxl:GroupingColumn ColId="1"/>
@@ -14785,7 +14785,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
               <dxl:Filter/>
               <dxl:HashJoin JoinType="Inner">
                 <dxl:Properties>
-                  <dxl:Cost StartupCost="0" TotalCost="356731.748084" Rows="2880896.000000" Width="153"/>
+                  <dxl:Cost StartupCost="0" TotalCost="367660.217776" Rows="2880896.000079" Width="153"/>
                 </dxl:Properties>
                 <dxl:ProjList>
                   <dxl:ProjElem ColId="1" Alias="c_customer_id">
@@ -14832,7 +14832,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
                 </dxl:HashCondList>
                 <dxl:RedistributeMotion InputSegments="0,1" OutputSegments="0,1">
                   <dxl:Properties>
-                    <dxl:Cost StartupCost="0" TotalCost="131761.446326" Rows="2880896.000000" Width="26"/>
+                    <dxl:Cost StartupCost="0" TotalCost="142689.916017" Rows="2880896.000079" Width="26"/>
                   </dxl:Properties>
                   <dxl:ProjList>
                     <dxl:ProjElem ColId="28" Alias="ss_customer_sk">
@@ -14863,7 +14863,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
                   </dxl:HashExprList>
                   <dxl:HashJoin JoinType="Inner">
                     <dxl:Properties>
-                      <dxl:Cost StartupCost="0" TotalCost="95186.571326" Rows="2880896.000000" Width="26"/>
+                      <dxl:Cost StartupCost="0" TotalCost="106115.041016" Rows="2880896.000079" Width="26"/>
                     </dxl:Properties>
                     <dxl:ProjList>
                       <dxl:ProjElem ColId="28" Alias="ss_customer_sk">
@@ -14962,7 +14962,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
                       </dxl:PrintableFilter>
                       <dxl:BroadcastMotion InputSegments="0,1" OutputSegments="0,1">
                         <dxl:Properties>
-                          <dxl:Cost StartupCost="0" TotalCost="1437.940435" Rows="12874.750453" Width="12"/>
+                          <dxl:Cost StartupCost="0" TotalCost="2999.150391" Rows="146098.000000" Width="12"/>
                         </dxl:Properties>
                         <dxl:ProjList>
                           <dxl:ProjElem ColId="55" Alias="d_date_sk">
@@ -14979,7 +14979,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
                         <dxl:SortingColumnList/>
                         <dxl:Sequence>
                           <dxl:Properties>
-                            <dxl:Cost StartupCost="0" TotalCost="1361.502444" Rows="6437.375227" Width="12"/>
+                            <dxl:Cost StartupCost="0" TotalCost="2142.107422" Rows="73049.000000" Width="12"/>
                           </dxl:Properties>
                           <dxl:ProjList>
                             <dxl:ProjElem ColId="55" Alias="d_date_sk">
@@ -15015,7 +15015,7 @@ WHERE ((sale_type = 's'::text AND dyear = 2001 AND year_total &gt; 0::numeric) O
                           </dxl:PartitionSelector>
                           <dxl:DynamicTableScan PartIndexId="2">
                             <dxl:Properties>
-                              <dxl:Cost StartupCost="0" TotalCost="1361.502444" Rows="6437.375227" Width="12"/>
+                              <dxl:Cost StartupCost="0" TotalCost="2142.107422" Rows="73049.000000" Width="12"/>
                             </dxl:Properties>
                             <dxl:ProjList>
                               <dxl:ProjElem ColId="55" Alias="d_date_sk">
